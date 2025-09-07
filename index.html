@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Character Tycoon - Multiplayer Next Gen</title>
+    <title>Character Tycoon - Multiplayer Edition</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * {
@@ -628,7 +628,7 @@
     <div class="container">
         <div class="header">
             <h1 class="title">🎮 CHARACTER TYCOON 🎮</h1>
-            <p>Sistema de Contas & Leilões</p>
+            <p>Modo Offline com Bots & Sistema de Contas</p>
         </div>
 
         <!-- Login Container -->
@@ -1205,78 +1205,221 @@
             gameState.currentRoom = roomCode;
             gameState.playerName = gameState.username;
             
-            // Hide login and show game
-            document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('gameArea').style.display = 'grid';
-            
-            // Try to connect to socket
+            // Try to join room via socket if connected
             if (socket && socket.connected) {
                 socket.emit('joinRoom', {
-                    username: gameState.username,
                     roomCode: roomCode,
                     playerData: {
+                        username: gameState.username,
                         money: gameState.money,
                         income: gameState.income,
-                        inventory: gameState.inventory
+                        inventory: gameState.inventory,
+                        baseLocked: gameState.baseLocked
                     }
                 });
             }
             
+            // Hide login and show game
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'grid';
+            
             startGameLoop();
-            showNotification('🎮 Entrou na sala: ' + roomCode);
+            showNotification('🎮 Entrando na sala: ' + roomCode);
         }
 
         // Socket Connection
         function initSocket() {
-              const serverUrls = [
-              'https://stealalobogoat-production.up.railway.app',
-              'http://localhost:8080',
+            const serverUrls = [
+                'https://stealalobogoat-production.up.railway.app',
+                'http://localhost:8080'
             ];
-            socket = io(serverUrls[0], {
-            transports: ['websocket']
-            });
-
             
-            try {
-                socket = io(serverUrls[1]); // Try production first
-                gameState.socket = socket;
+            let connectionAttempt = 0;
+            
+            function tryConnection(urlIndex = 0) {
+                if (urlIndex >= serverUrls.length) {
+                    // Se todas as conexões falharam, usar modo offline
+                    fallbackToOfflineMode();
+                    return;
+                }
+                
+                try {
+                    document.getElementById('connectionStatus').innerHTML = '🟡 Conectando...';
+                    
+                    socket = io(serverUrls[urlIndex], {
+                        transports: ['websocket', 'polling'],
+                        timeout: 5000,
+                        forceNew: true
+                    });
+                    
+                    gameState.socket = socket;
 
-                socket.on('connect', () => {
-                    document.getElementById('connectionStatus').innerHTML = '🟢 Conectado';
-                });
+                    socket.on('connect', () => {
+                        document.getElementById('connectionStatus').innerHTML = '🟢 Conectado ao Servidor';
+                        showNotification('✅ Conectado ao servidor multiplayer!');
+                    });
 
-                socket.on('disconnect', () => {
-                    document.getElementById('connectionStatus').innerHTML = '🔴 Desconectado';
-                });
+                    socket.on('disconnect', () => {
+                        document.getElementById('connectionStatus').innerHTML = '🔴 Desconectado';
+                        showNotification('⚠️ Conexão perdida com o servidor');
+                    });
 
-                socket.on('roomJoined', (data) => {
-                    gameState.players = data.players;
-                    updatePlayersList();
-                });
+                    socket.on('connect_error', (error) => {
+                        console.log(`Falha na conexão com ${serverUrls[urlIndex]}:`, error);
+                        socket.disconnect();
+                        tryConnection(urlIndex + 1);
+                    });
 
-                socket.on('playersUpdate', (players) => {
-                    gameState.players = players;
-                    updatePlayersList();
-                });
+                    socket.on('roomJoined', (data) => {
+                        gameState.players = data.players;
+                        gameState.currentRoom = data.roomCode;
+                        updatePlayersList();
+                        showNotification(`🏠 Entrou na sala: ${data.roomCode}`);
+                    });
 
-                socket.on('conveyorUpdate', (items) => {
-                    gameState.conveyorItems = items;
-                    updateConveyor();
-                });
+                    socket.on('playersUpdate', (players) => {
+                        gameState.players = players;
+                        updatePlayersList();
+                    });
 
-                socket.on('auctionsUpdate', (auctions) => {
-                    gameState.auctions = auctions;
-                    updateAuctions();
-                });
+                    socket.on('conveyorUpdate', (items) => {
+                        gameState.conveyorItems = items;
+                        updateConveyor();
+                    });
 
-                socket.on('notification', (message) => {
-                    showNotification(message);
-                });
+                    socket.on('auctionsUpdate', (auctions) => {
+                        gameState.auctions = auctions;
+                        updateAuctions();
+                    });
 
-            } catch (error) {
-                console.error('Socket error:', error);
-                document.getElementById('connectionStatus').innerHTML = '🔴 Erro de Conexão';
+                    socket.on('tradeRequest', (data) => {
+                        showNotification(`🤝 ${data.from} quer trocar com você!`);
+                        // Handle trade request
+                    });
+
+                    socket.on('tradeUpdate', (data) => {
+                        if (gameState.currentTrade && gameState.currentTrade.id === data.tradeId) {
+                            gameState.currentTrade = data;
+                            updateTradeModal();
+                        }
+                    });
+
+                    socket.on('diplomacyChange', (data) => {
+                        showNotification(`🏛️ ${data.from} mudou relação para: ${data.status}`);
+                        gameState.diplomacy[data.from] = data.status;
+                        updateDiplomacy();
+                    });
+
+                    socket.on('attackResult', (data) => {
+                        if (data.success) {
+                            showNotification(`💥 ${data.attacker} roubou ${data.item} de você!`);
+                            if (gameState.inventory[data.item]) {
+                                gameState.inventory[data.item]--;
+                                if (gameState.inventory[data.item] <= 0) {
+                                    delete gameState.inventory[data.item];
+                                }
+                            }
+                        } else {
+                            showNotification(`🛡️ Defendeu ataque de ${data.attacker}!`);
+                        }
+                        updateUI();
+                    });
+
+                    socket.on('notification', (message) => {
+                        showNotification(message);
+                    });
+
+                    socket.on('error', (error) => {
+                        console.error('Socket error:', error);
+                        showNotification('❌ Erro de conexão');
+                    });
+
+                } catch (error) {
+                    console.error('Erro ao inicializar socket:', error);
+                    tryConnection(urlIndex + 1);
+                }
             }
+            
+            function fallbackToOfflineMode() {
+                document.getElementById('connectionStatus').innerHTML = '🟡 Modo Offline (Servidor Indisponível)';
+                showNotification('⚠️ Servidor indisponível - Modo offline ativado');
+                
+                // Simular jogadores online localmente
+                gameState.players = [
+                    {
+                        username: gameState.username,
+                        money: gameState.money,
+                        income: gameState.income,
+                        inventory: gameState.inventory,
+                        baseLocked: gameState.baseLocked
+                    }
+                ];
+                
+                // Adicionar alguns bots para simular multiplayer
+                const botNames = ['RoboTrader', 'CyberCollector', 'DigitalDealer', 'AutoBuyer'];
+                botNames.forEach((botName, index) => {
+                    if (Math.random() > 0.3) { // 70% chance de cada bot estar online
+                        gameState.players.push({
+                            username: botName,
+                            money: Math.floor(Math.random() * 5000) + 500,
+                            income: Math.floor(Math.random() * 50) + 10,
+                            inventory: generateBotInventory(),
+                            baseLocked: Math.random() > 0.7
+                        });
+                    }
+                });
+                
+                updatePlayersList();
+                
+                // Simular atividade dos bots
+                setInterval(() => {
+                    simulateBotActivity();
+                }, 30000); // A cada 30 segundos
+            }
+            
+            // Iniciar tentativa de conexão
+            tryConnection(0);
+        }
+
+        function generateBotInventory() {
+            const inventory = {};
+            const characters = Object.keys(characterDatabase);
+            const itemCount = Math.floor(Math.random() * 8) + 2; // 2-10 itens
+            
+            for (let i = 0; i < itemCount; i++) {
+                const randomChar = characters[Math.floor(Math.random() * characters.length)];
+                inventory[randomChar] = Math.floor(Math.random() * 3) + 1;
+            }
+            
+            return inventory;
+        }
+
+        function simulateBotActivity() {
+            // Simular compras dos bots na esteira
+            if (gameState.conveyorItems.length > 0 && Math.random() > 0.6) {
+                const randomIndex = Math.floor(Math.random() * gameState.conveyorItems.length);
+                const item = gameState.conveyorItems[randomIndex];
+                const botIndex = Math.floor(Math.random() * (gameState.players.length - 1)) + 1;
+                
+                if (gameState.players[botIndex] && gameState.players[botIndex].money >= item.price) {
+                    gameState.players[botIndex].money -= item.price;
+                    gameState.conveyorItems.splice(randomIndex, 1);
+                    updateConveyor();
+                    showNotification(`🤖 ${gameState.players[botIndex].username} comprou ${item.name}!`);
+                }
+            }
+            
+            // Atualizar dinheiro dos bots
+            gameState.players.forEach((player, index) => {
+                if (index > 0) { // Não o jogador principal
+                    player.money += player.income;
+                    if (player.money > 10000) {
+                        player.money = Math.floor(player.money * 0.8); // Simular gastos
+                    }
+                }
+            });
+            
+            updatePlayersList();
         }
 
         // Game Loop
@@ -1325,12 +1468,7 @@
             gameState.conveyorItems = items;
             updateConveyor();
             
-            if (socket && gameState.currentRoom) {
-                socket.emit('updateConveyor', {
-                    roomCode: gameState.currentRoom,
-                    items: items
-                });
-            }
+            // Modo offline - sem socket
         }
 
         function calculatePrice(characterName) {
@@ -1397,12 +1535,17 @@
                 updateBase();
                 saveUserData();
                 
-                if (socket) {
-                    socket.emit('characterPurchased', {
+                // Emit to server if connected
+                if (socket && socket.connected) {
+                    socket.emit('buyCharacter', {
                         roomCode: gameState.currentRoom,
-                        username: gameState.username,
-                        character: item.name,
-                        conveyorItems: gameState.conveyorItems
+                        itemIndex: index,
+                        playerData: {
+                            username: gameState.username,
+                            money: gameState.money,
+                            income: gameState.income,
+                            inventory: gameState.inventory
+                        }
                     });
                 }
                 
@@ -1676,13 +1819,27 @@
             const oldStatus = gameState.diplomacy[targetPlayer] || 'paz';
             gameState.diplomacy[targetPlayer] = newStatus;
             
-            if (socket) {
-                socket.emit('diplomacyChange', {
+            // Emit to server if connected
+            if (socket && socket.connected) {
+                socket.emit('changeDiplomacy', {
                     roomCode: gameState.currentRoom,
                     from: gameState.username,
                     to: targetPlayer,
                     status: newStatus
                 });
+            } else {
+                // Simular resposta dos bots (modo offline)
+                const targetBot = gameState.players.find(p => p.username === targetPlayer);
+                if (targetBot && (targetBot.username.includes('Bot') || targetBot.username.includes('Robot') || targetBot.username.includes('Cyber') || targetBot.username.includes('Auto'))) {
+                    // Bot responde automaticamente
+                    setTimeout(() => {
+                        if (newStatus === 'guerra') {
+                            showNotification(`⚔️ ${targetPlayer} aceitou a guerra!`);
+                        } else if (newStatus === 'paz') {
+                            showNotification(`🕊️ ${targetPlayer} aceitou a paz!`);
+                        }
+                    }, 1000);
+                }
             }
             
             updateDiplomacy();
@@ -1737,13 +1894,17 @@
                 gameState.inventory[randomItem] = 1;
             }
             
-            if (socket) {
-                socket.emit('playerAttack', {
+            // Emit attack to server if connected
+            if (socket && socket.connected) {
+                socket.emit('attackPlayer', {
                     roomCode: gameState.currentRoom,
                     attacker: gameState.username,
-                    target: targetPlayer,
-                    stolenItem: randomItem
+                    target: targetPlayer
                 });
+            } else {
+                // Simular ataque local (modo offline)
+                gameState.attacksWon = (gameState.attacksWon || 0) + 1;
+                gameState.itemsStolen = (gameState.itemsStolen || 0) + 1;
             }
             
             updateUI();
@@ -1848,13 +2009,30 @@
                 return;
             }
             
-            if (socket) {
-                socket.emit('tradeOffer', {
-                    roomCode: gameState.currentRoom,
-                    from: gameState.username,
-                    to: gameState.currentTrade.partner,
-                    offer: gameState.currentTrade.myOffer
-                });
+            // Simular troca com bot
+            const isBot = gameState.currentTrade.partner.includes('Robot') || 
+                         gameState.currentTrade.partner.includes('Cyber') || 
+                         gameState.currentTrade.partner.includes('Auto');
+            
+            if (isBot) {
+                setTimeout(() => {
+                    if (Math.random() > 0.3) { // 70% chance de aceitar
+                        // Executar troca
+                        Object.entries(gameState.currentTrade.myOffer).forEach(([item, count]) => {
+                            gameState.inventory[item] -= count;
+                            if (gameState.inventory[item] <= 0) {
+                                delete gameState.inventory[item];
+                            }
+                        });
+                        
+                        gameState.tradesCompleted = (gameState.tradesCompleted || 0) + 1;
+                        updateUI();
+                        saveUserData();
+                        showNotification(`✅ Troca com ${gameState.currentTrade.partner} concluída!`);
+                    } else {
+                        showNotification(`❌ ${gameState.currentTrade.partner} recusou a troca.`);
+                    }
+                }, 2000);
             }
             
             showNotification('🤝 Proposta de troca enviada!');
@@ -1911,11 +2089,26 @@
                 bids: []
             };
             
-            if (socket) {
+            // Emit auction to server if connected
+            if (socket && socket.connected) {
                 socket.emit('createAuction', {
                     roomCode: gameState.currentRoom,
                     auction: auction
                 });
+            } else {
+                // Adicionar leilão localmente (modo offline)
+                gameState.auctions.push(auction);
+                
+                // Simular interesse dos bots
+                setTimeout(() => {
+                    if (Math.random() > 0.5) {
+                        const botBidder = gameState.players[Math.floor(Math.random() * (gameState.players.length - 1)) + 1];
+                        if (botBidder) {
+                            const botBid = auction.startPrice + Math.floor(Math.random() * 500) + 100;
+                            showNotification(`🤖 ${botBidder.username} deu lance de 💰${botBid}!`);
+                        }
+                    }
+                }, Math.random() * 10000 + 5000); // Entre 5-15 segundos
             }
             
             updateUI();
@@ -1925,9 +2118,8 @@
         }
 
         function loadAuctions() {
-            if (socket) {
-                socket.emit('getAuctions', { roomCode: gameState.currentRoom });
-            }
+            // Carregar leilões locais
+            updateAuctions();
         }
 
         function updateAuctions() {
@@ -1985,14 +2177,30 @@
                 return;
             }
             
-            if (socket) {
+            // Emit bid to server if connected
+            if (socket && socket.connected) {
                 socket.emit('placeBid', {
                     roomCode: gameState.currentRoom,
                     auctionId: auctionId,
                     bidder: gameState.username,
                     amount: bidAmount
                 });
+            } else {
+                // Processar lance localmente (modo offline)
+                auction.currentBid = bidAmount;
+                auction.highestBidder = gameState.username;
+                auction.bids.push({
+                    bidder: gameState.username,
+                    amount: bidAmount,
+                    timestamp: Date.now()
+                });
             }
+            
+            gameState.money -= bidAmount;
+            updateUI();
+            updateAuctions();
+            saveUserData();
+            showNotification(`💰 Lance de ${bidAmount} realizado!`);
             
             bidInput.value = '';
         }
@@ -2233,8 +2441,10 @@
             console.log('🎮 Character Tycoon carregado!');
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97b977751007034f',t:'MTc1NzI4MjI5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97b9c750f2ff1b11',t:'MTc1NzI4NTU2OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
+
 
 
 
