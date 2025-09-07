@@ -1,16 +1,11 @@
-
-<script src="/socket.io/socket.io.js"></script>
-<script src="multiplayer.js"></script>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Character Tycoon 2024 - Next Gen Edition</title>
-    
+    <title>Character Tycoon - Multiplayer Next Gen</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
         * {
             margin: 0;
             padding: 0;
@@ -18,1106 +13,936 @@
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #0a0a0f 0%, #1a0f2e 30%, #2d1b69 70%, #4a148c 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: white;
-            overflow-x: hidden;
-            position: relative;
         }
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .login-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            backdrop-filter: blur(20px);
-        }
-
-        .login-form {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 50px;
-            border-radius: 24px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            text-align: center;
-            max-width: 480px;
-            width: 90%;
-            box-shadow: 
-                0 32px 64px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            animation: loginFadeIn 1s ease-out;
-        }
-
-        @keyframes loginFadeIn {
-            from { opacity: 0; transform: translateY(40px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .login-title {
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 30px;
-            background: linear-gradient(135deg, #00f5ff 0%, #ff00ff 50%, #ffff00 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 0 40px rgba(0, 245, 255, 0.3);
-            letter-spacing: -1px;
-        }
-
-        .login-subtitle {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 35px;
-            font-weight: 400;
-        }
-
-        .login-input {
-            width: 100%;
-            padding: 18px 24px;
-            margin: 15px 0;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 500;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-family: inherit;
-        }
-
-        .login-input:focus {
-            outline: none;
-            border-color: #00f5ff;
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.1), 0 0 32px rgba(0, 245, 255, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .login-input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 400;
-        }
-
-        .login-btn {
-            width: 100%;
-            padding: 18px;
-            margin: 25px 0;
-            background: linear-gradient(135deg, #00f5ff 0%, #0099ff 100%);
-            border: none;
-            border-radius: 16px;
-            color: white;
-            font-size: 1.2rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 32px rgba(0, 153, 255, 0.3);
-            font-family: inherit;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .login-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 40px rgba(0, 153, 255, 0.4);
-        }
-
-        .login-btn:hover::before {
-            left: 100%;
-        }
-
-        .version-badge {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-            padding: 12px 24px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            z-index: 1000;
-            animation: badgeFloat 4s ease-in-out infinite;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        @keyframes badgeFloat {
-            0%, 100% { transform: translateX(-50%) translateY(0px); }
-            50% { transform: translateX(-50%) translateY(-8px); }
-        }
-
-        .game-container {
-            display: grid;
-            grid-template-areas: 
-                "header header header header"
-                "controls conveyor shop inventory"
-                "players conveyor shop inventory"
-                "trading bases bases bases";
-            grid-template-columns: 300px 1fr 340px 400px;
-            grid-template-rows: auto 1fr auto auto;
-            gap: 24px;
-            padding: 24px;
-            min-height: 100vh;
-            margin-top: 80px;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
         .header {
-            grid-area: header;
             text-align: center;
-            background: rgba(255, 255, 255, 0.08);
-            padding: 32px;
-            border-radius: 24px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 
-                0 24px 48px rgba(0, 0, 0, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
         }
 
-        .game-title {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #00f5ff 0%, #ff00ff 50%, #ffff00 100%);
+        .title {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-shadow: 0 0 40px rgba(0, 245, 255, 0.3);
-            letter-spacing: -2px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
-        .player-info {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-bottom: 20px;
-            font-size: 1.1rem;
-            font-weight: 500;
-        }
-
-        .money-display {
-            font-size: 2.8rem;
-            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 12px;
-            font-weight: 800;
-            text-shadow: 0 0 32px rgba(0, 255, 136, 0.3);
-        }
-
-        .income-display {
-            font-size: 1.3rem;
-            color: #81ff9f;
-            font-weight: 600;
-            text-shadow: 0 0 20px rgba(129, 255, 159, 0.3);
-        }
-
-        .controls, .inventory-area, .shop-area, .players-area, .trading-area, .bases-area {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 24px;
-            border-radius: 24px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 
-                0 24px 48px rgba(0, 0, 0, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-
-        .controls {
-            grid-area: controls;
-        }
-
-        .conveyor-belt {
-            grid-area: conveyor;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 24px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 
-                0 24px 48px rgba(0, 0, 0, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-
-        .shop-area {
-            grid-area: shop;
-            overflow-y: auto;
-            max-height: 700px;
-        }
-
-        .inventory-area {
-            grid-area: inventory;
-            overflow-y: auto;
-            max-height: 700px;
-        }
-
-        .players-area {
-            grid-area: players;
-            overflow-y: auto;
-            max-height: 500px;
-        }
-
-        .trading-area {
-            grid-area: trading;
-            overflow-y: auto;
-            max-height: 400px;
-        }
-
-        .bases-area {
-            grid-area: bases;
-            overflow-y: auto;
-            max-height: 500px;
-        }
-
-        .belt-container {
-            height: 240px;
-            overflow: hidden;
-            position: relative;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            border-radius: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 
-                inset 0 8px 32px rgba(0, 0, 0, 0.3),
-                0 0 0 1px rgba(255, 255, 255, 0.05);
-        }
-
-        .belt-items {
-            display: flex;
-            animation: beltMove 40s linear infinite;
-            height: 100%;
-            align-items: center;
-            gap: 32px;
-            padding: 0 32px;
-        }
-
-        @keyframes beltMove {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-        }
-
-        .belt-item {
+        .login-container {
             background: rgba(255, 255, 255, 0.1);
-            padding: 16px 24px;
+            backdrop-filter: blur(10px);
             border-radius: 20px;
-            white-space: nowrap;
-            font-size: 1rem;
-            font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            min-width: 180px;
-            text-align: center;
-            position: relative;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        }
-
-        .belt-item:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.08) translateY(-8px);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-
-        .belt-item.sold-out {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background: rgba(255, 69, 58, 0.2);
-            border: 1px solid #ff453a;
-            animation: soldPulse 3s ease-in-out infinite;
-        }
-
-        @keyframes soldPulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 0.3; }
-        }
-
-        .belt-item-price {
-            position: absolute;
-            top: -12px;
-            right: -12px;
-            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-            color: white;
-            border-radius: 16px;
-            padding: 6px 12px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            box-shadow: 0 4px 16px rgba(0, 255, 136, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .belt-item.sold-out .belt-item-price {
-            background: linear-gradient(135deg, #ff453a 0%, #d70015 100%);
-            box-shadow: 0 4px 16px rgba(255, 69, 58, 0.3);
-        }
-
-        .section-title {
-            font-size: 1.5rem;
+            padding: 30px;
             margin-bottom: 20px;
-            background: linear-gradient(135deg, #ffff00 0%, #ff9500 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-align: center;
-            font-weight: 700;
-            text-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 400px;
+            margin: 0 auto 20px auto;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px;
+            margin: 0 5px;
+        }
+
+        .auth-tab.active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
         }
 
         .action-button {
-            width: 100%;
-            padding: 16px;
-            margin: 12px 0;
-            font-size: 1.1rem;
-            font-weight: 600;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
             border: none;
-            border-radius: 16px;
+            padding: 15px 30px;
+            border-radius: 25px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            font-family: inherit;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .action-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .action-button:hover::before {
-            left: 100%;
-        }
-
-        .collect-btn {
-            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-            color: white;
-        }
-
-        .attack-btn {
-            background: linear-gradient(135deg, #ff453a 0%, #d70015 100%);
-            color: white;
-        }
-
-        .shop-btn {
-            background: linear-gradient(135deg, #bf5af2 0%, #9f44d3 100%);
-            color: white;
-        }
-
-        .trade-btn {
-            background: linear-gradient(135deg, #ff9500 0%, #ff6d00 100%);
-            color: white;
+            transition: all 0.3s ease;
+            margin: 5px;
         }
 
         .action-button:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
 
-        .action-button:disabled {
-            background: linear-gradient(135deg, #666 0%, #555 100%);
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
         }
 
-        .inventory-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 16px;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .game-area {
+            display: none;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
             margin-top: 20px;
         }
 
-        .inventory-item {
+        .main-game {
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 16px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            cursor: pointer;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .inventory-item:hover {
-            transform: scale(1.05) translateY(-4px);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-
-        .inventory-item.selected {
-            border-color: #00f5ff;
-            background: rgba(0, 245, 255, 0.15);
-            box-shadow: 0 0 32px rgba(0, 245, 255, 0.3);
-        }
-
-        .item-name {
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 6px;
-            line-height: 1.2;
-        }
-
-        .item-income {
-            font-size: 0.7rem;
-            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 600;
-        }
-
-        .item-count {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: linear-gradient(135deg, #ff453a 0%, #d70015 100%);
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            box-shadow: 0 4px 16px rgba(255, 69, 58, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        /* Rarities com efeitos modernos */
-        .comum { 
-            border-color: #8e8e93; 
-            background: rgba(142, 142, 147, 0.1);
-        }
-        .incomum { 
-            border-color: #00ff88; 
-            background: rgba(0, 255, 136, 0.15);
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
-        }
-        .raro { 
-            border-color: #007aff; 
-            background: rgba(0, 122, 255, 0.15);
-            box-shadow: 0 0 20px rgba(0, 122, 255, 0.2);
-        }
-        .epico { 
-            border-color: #bf5af2; 
-            background: rgba(191, 90, 242, 0.15);
-            box-shadow: 0 0 20px rgba(191, 90, 242, 0.2);
-        }
-        .lendario { 
-            border-color: #ff9500; 
-            background: rgba(255, 149, 0, 0.15);
-            box-shadow: 0 0 20px rgba(255, 149, 0, 0.2);
-        }
-        .mitico { 
-            border-color: #ff453a; 
-            background: rgba(255, 69, 58, 0.15);
-            box-shadow: 0 0 20px rgba(255, 69, 58, 0.2);
-        }
-        .prismatico { 
-            border: 2px solid #00f5ff;
-            background: linear-gradient(135deg, rgba(0, 245, 255, 0.2), rgba(255, 0, 255, 0.2));
-            animation: prismaticGlow 3s ease-in-out infinite alternate;
-        }
-
-        @keyframes prismaticGlow {
-            0% { 
-                box-shadow: 0 0 32px #00f5ff, 0 0 48px rgba(0, 245, 255, 0.3); 
-                transform: scale(1);
-            }
-            100% { 
-                box-shadow: 0 0 48px #ff00ff, 0 0 64px rgba(255, 0, 255, 0.3); 
-                transform: scale(1.02);
-            }
-        }
-
-        .crate-item {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            padding: 24px;
-            margin: 20px 0;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .crate-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.5s;
-        }
-
-        .crate-item:hover {
-            background: rgba(255, 255, 255, 0.12);
-            transform: translateY(-6px);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-
-        .crate-item:hover::before {
-            left: 100%;
-        }
-
-        .crate-name {
-            font-weight: 700;
-            margin-bottom: 12px;
-            font-size: 1.2rem;
-        }
-
-        .crate-price {
-            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 1.5rem;
-            margin-bottom: 12px;
-            font-weight: 800;
-            text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-        }
-
-        .crate-description {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.7);
-            line-height: 1.5;
-            font-weight: 400;
-        }
-
-        .player-card {
-            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 20px;
-            margin: 16px 0;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .player-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
-            border-color: rgba(255, 255, 255, 0.4);
+        .main-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .player-name {
-            font-weight: 700;
-            background: linear-gradient(135deg, #ffff00 0%, #ff9500 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 12px;
-            font-size: 1.2rem;
-        }
-
-        .player-stats {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 16px;
-            line-height: 1.5;
-            font-weight: 400;
-        }
-
-        .online-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            background: #00ff88;
-            border-radius: 50%;
-            margin-right: 12px;
-            animation: onlinePulse 2s infinite;
-            box-shadow: 0 0 16px rgba(0, 255, 136, 0.5);
-        }
-
-        @keyframes onlinePulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.3); }
-        }
-
-        .connection-status {
-            text-align: center;
-            padding: 16px;
-            margin: 16px 0;
-            border-radius: 16px;
-            font-size: 1rem;
-            font-weight: 600;
-        }
-
-        .connection-status.connected {
-            background: rgba(0, 255, 136, 0.15);
-            border: 1px solid #00ff88;
-            color: #00ff88;
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
-        }
-
-        .connection-status.connecting {
-            background: rgba(255, 149, 0, 0.15);
-            border: 1px solid #ff9500;
-            color: #ff9500;
-            animation: connectingPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes connectingPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .connection-status.error {
-            background: rgba(255, 69, 58, 0.15);
-            border: 1px solid #ff453a;
-            color: #ff453a;
-        }
-
-        .notification {
-            position: fixed;
-            top: 100px;
-            right: 32px;
-            padding: 20px 28px;
-            border-radius: 16px;
-            font-weight: 600;
-            z-index: 1000;
-            animation: slideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            max-width: 360px;
-            font-size: 1.1rem;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .notification.success { 
-            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); 
-            color: white; 
-        }
-        .notification.failure { 
-            background: linear-gradient(135deg, #ff453a 0%, #d70015 100%); 
-            color: white; 
-        }
-        .notification.warning { 
-            background: linear-gradient(135deg, #ff9500 0%, #ff6d00 100%); 
-            color: white; 
-        }
-        .notification.info { 
-            background: linear-gradient(135deg, #007aff 0%, #0056cc 100%); 
-            color: white; 
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%) scale(0.9); opacity: 0; }
-            to { transform: translateX(0) scale(1); opacity: 1; }
+        .sidebar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: fit-content;
         }
 
         .stats {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin: 20px 0;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
         .stat-box {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 16px;
-            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
             text-align: center;
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
             transition: all 0.3s ease;
-        }
-
-        .stat-box:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        }
-
-        .stat-number {
-            font-size: 1.4rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ffff00 0%, #ff9500 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 16px rgba(255, 255, 0, 0.3);
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 6px;
-            font-weight: 500;
-        }
-
-        .features-list {
-            margin-top: 25px;
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.8);
-            line-height: 1.6;
-        }
-
-        .feature-item {
-            display: flex;
-            align-items: center;
-            margin: 8px 0;
-            font-weight: 500;
-        }
-
-        .feature-icon {
-            margin-right: 12px;
-            font-size: 1.2rem;
-        }
-
-        /* Scrollbar moderna */
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
-            border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
+        .stat-box:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
         }
 
-        @media (max-width: 1600px) {
-            .game-container {
-                grid-template-areas: 
-                    "header"
-                    "controls"
-                    "conveyor"
-                    "shop"
-                    "inventory"
-                    "players"
-                    "trading"
-                    "bases";
-                grid-template-columns: 1fr;
-                grid-template-rows: auto auto auto auto auto auto auto auto;
-            }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .stat-card h4 {
+            margin-bottom: 15px;
+            color: #4ecdc4;
+            font-size: 1.2rem;
+            border-bottom: 2px solid rgba(78, 205, 196, 0.3);
+            padding-bottom: 8px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-item span {
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .conveyor {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .conveyor-items {
+            display: flex;
+            gap: 15px;
+            animation: scroll 20s linear infinite;
+            width: fit-content;
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .conveyor-belt {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 150px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .conveyor-track {
+            display: flex;
+            gap: 15px;
+            animation: moveConveyor 15s linear infinite;
+        }
+
+        @keyframes moveConveyor {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .conveyor-item {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            min-width: 150px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            white-space: nowrap;
+        }
+
+        .conveyor-item:hover {
+            transform: scale(1.05);
+            border-color: #4ecdc4;
+        }
+
+        .character-card {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 120px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            flex-shrink: 0;
+        }
+
+        .character-card:hover {
+            transform: scale(1.05);
+            border-color: #4ecdc4;
+        }
+
+        .rarity-comum { border-color: #95a5a6; }
+        .rarity-incomum { border-color: #2ecc71; }
+        .rarity-raro { border-color: #3498db; }
+        .rarity-epico { border-color: #9b59b6; }
+        .rarity-lendario { border-color: #f39c12; }
+        .rarity-mitico { border-color: #e74c3c; }
+        .rarity-secreto { border-color: #ff6b6b; }
+        .rarity-brainrotgod { 
+            border-color: #ff1493; 
+            animation: rainbow 2s linear infinite;
+        }
+
+        @keyframes rainbow {
+            0% { border-color: #ff1493; }
+            25% { border-color: #00ff00; }
+            50% { border-color: #00bfff; }
+            75% { border-color: #ffd700; }
+            100% { border-color: #ff1493; }
+        }
+
+        .inventory {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .inventory-item {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .players-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .player-item {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 5px 0;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .player-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .inventory-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .players-online {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .player-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(30, 60, 114, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .diplomacy-status {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 10px;
+        }
+
+        .status-paz { background: #2ecc71; }
+        .status-tensao { background: #f39c12; }
+        .status-embargo { background: #95a5a6; }
+        .status-guerra { background: #e74c3c; }
+        .status-guerra-mundial { 
+            background: #8b0000; 
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .base-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .base-locked {
+            border: 3px solid #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            animation: lockGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes lockGlow {
+            from { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+            to { box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
+        }
+
+        .base-slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .base-slot {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .base-slot.occupied {
+            border-style: solid;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .base-slot:hover {
+            border-color: #4ecdc4;
+        }
+
+        .auction-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .auction-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .bid-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .bid-input input {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .bid-section {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px 10px 0 0;
+            margin-right: 5px;
+        }
+
+        .tab.active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px 10px 0 0;
+            margin-right: 5px;
+        }
+
+        .tab.active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         @media (max-width: 768px) {
-            .login-form {
-                padding: 32px 24px;
-                margin: 20px;
-            }
-            
-            .login-title {
-                font-size: 2.2rem;
-            }
-            
-            .game-title {
-                font-size: 2.5rem;
-            }
-            
-            .money-display {
-                font-size: 2.2rem;
-            }
-            
-            .player-info {
-                flex-direction: column;
-                gap: 12px;
+            .game-area {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <div class="login-screen" id="loginScreen">
-        <div class="login-form">
-            <h2 class="login-title">🚀 Character Tycoon</h2>
-            <p class="login-subtitle">Next Generation Edition 2024</p>
-            
-            <input type="text" class="login-input" id="playerName" placeholder="Seu nome (ex: João)" maxlength="15">
-            <input type="text" class="login-input" id="roomCode" placeholder="Código da Sala (ex: TURMA2024)" maxlength="20">
-            <button class="login-btn" onclick="joinGame()">🎮 ENTRAR NO JOGO</button>
-
-            <div class="features-list">
-                <div class="feature-item">
-                    <span class="feature-icon">✨</span>
-                    <span>Interface moderna e responsiva</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">🎯</span>
-                    <span>Sistema de raridades aprimorado</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">🔥</span>
-                    <span>Animações fluidas e efeitos visuais</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">⚡</span>
-                    <span>Performance otimizada</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">🌐</span>
-                    <span>Pronto para multiplayer real</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="version-badge">
-        🔥 NEXT GEN 2024 - Ultra Modern Edition
-    </div>
-
-    <div class="game-container">
+    <div class="container">
         <div class="header">
-            <h1 class="game-title">🏰 Character Tycoon</h1>
-            <div class="player-info">
-                <span>👤 <span id="currentPlayer">-</span></span>
-                <span>🏠 Sala: <span id="currentRoom">-</span></span>
-                <span>👥 Online: <span id="onlineCount">1</span></span>
-            </div>
-            <div class="money-display">💰 $<span id="money">100</span></div>
-            <div class="income-display">📈 Renda: $<span id="income">0</span>/seg</div>
+            <h1 class="title">🎮 CHARACTER TYCOON 🎮</h1>
+            <p>Sistema de Contas & Leilões</p>
         </div>
 
-        <div class="controls">
-            <h2 class="section-title">🎮 Central de Comando</h2>
-            
-            <div class="connection-status error" id="connectionStatus">
-                🔴 Modo Offline - Totalmente Funcional!
+        <!-- Login Container -->
+        <div class="login-container" id="loginContainer">
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+                <button class="auth-tab" onclick="switchAuthTab('register')">Criar Conta</button>
             </div>
-            
-            <button class="action-button collect-btn" onclick="collectFromBelt()">
-                🎯 Coletar da Esteira
-            </button>
-            
-            <button class="action-button attack-btn" onclick="attackRandomPlayer()">
-                ⚔️ Atacar Bot Aleatório
-            </button>
 
-            <div class="stats">
-                <div class="stat-box">
-                    <div class="stat-number" id="playerLevel">1</div>
-                    <div class="stat-label">Nível</div>
+            <!-- Login Form -->
+            <div id="loginForm">
+                <div class="input-group">
+                    <label>👤 Nome de Usuário:</label>
+                    <input type="text" id="loginUsername" placeholder="Digite seu usuário..." onkeypress="if(event.key==='Enter') loginUser()">
                 </div>
-                <div class="stat-box">
-                    <div class="stat-number" id="playerXP">0</div>
-                    <div class="stat-label">XP</div>
+                <div class="input-group">
+                    <label>🔒 Senha:</label>
+                    <input type="password" id="loginPassword" placeholder="Digite sua senha..." onkeypress="if(event.key==='Enter') loginUser()">
                 </div>
-                <div class="stat-box">
-                    <div class="stat-number" id="totalItems">0</div>
-                    <div class="stat-label">Itens Únicos</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-number" id="totalValue">0</div>
-                    <div class="stat-label">Valor Total</div>
-                </div>
+                <button class="action-button" onclick="loginUser()">🚀 ENTRAR</button>
             </div>
-            
-            <button class="action-button shop-btn" onclick="toggleAchievements()" style="margin-top: 16px;">
-                🏆 Conquistas (<span id="achievementCount">0</span>)
-            </button>
+
+            <!-- Register Form -->
+            <div id="registerForm" style="display: none;">
+                <div class="input-group">
+                    <label>👤 Nome de Usuário:</label>
+                    <input type="text" id="registerUsername" placeholder="Escolha um usuário..." onkeypress="if(event.key==='Enter') registerUser()">
+                </div>
+                <div class="input-group">
+                    <label>🔒 Senha:</label>
+                    <input type="password" id="registerPassword" placeholder="Escolha uma senha..." onkeypress="if(event.key==='Enter') registerUser()">
+                </div>
+                <div class="input-group">
+                    <label>🔒 Confirmar Senha:</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirme sua senha..." onkeypress="if(event.key==='Enter') registerUser()">
+                </div>
+                <button class="action-button" onclick="registerUser()">📝 CRIAR CONTA</button>
+            </div>
+
+            <div class="input-group" id="roomSection" style="display: none;">
+                <label>🏠 Código da Sala:</label>
+                <input type="text" id="roomCode" placeholder="Digite o código da sala..." onkeypress="if(event.key==='Enter') joinRoom()">
+                <button class="action-button" onclick="joinRoom()">🎮 ENTRAR NA SALA</button>
+            </div>
+
+            <div id="connectionStatus">🔴 Desconectado</div>
         </div>
 
-        <div class="conveyor-belt">
-            <h2 class="section-title">🏭 Esteira Automática</h2>
-            <div class="belt-container">
-                <div class="belt-items" id="beltItems">
-                    <div style="color: rgba(255, 255, 255, 0.7); padding: 24px; font-size: 1.1rem;">Carregando esteira...</div>
+        <!-- Game Area -->
+        <div class="game-area" id="gameArea" style="display: none;">
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value" id="money">💰 0</div>
+                        <div>Dinheiro</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="income">💸 0/s</div>
+                        <div>Renda</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="totalCharacters">👥 0</div>
+                        <div>Personagens</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="rebirthPoints">⭐ 0</div>
+                        <div>Rebirth</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="totalEarned">📈 0</div>
+                        <div>Total Ganho</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="playTime">⏰ 0m</div>
+                        <div>Tempo Jogado</div>
+                    </div>
+                </div>
+
+                <!-- Conveyor Belt -->
+                <div class="conveyor-belt">
+                    <h3>🎰 Esteira de Personagens</h3>
+                    <div class="conveyor-track" id="conveyorTrack">
+                        <!-- Characters will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" onclick="switchGameTab('base')">🏰 Base</button>
+                    <button class="tab" onclick="switchGameTab('auctions')">🔨 Leilões</button>
+                    <button class="tab" onclick="switchGameTab('trades')">🤝 Trocas</button>
+                    <button class="tab" onclick="switchGameTab('diplomacy')">🏛️ Diplomacia</button>
+                    <button class="tab" onclick="switchGameTab('stats')">📊 Estatísticas</button>
+                </div>
+
+                <!-- Base Content -->
+                <div class="tab-content active" id="base-content">
+                    <div class="base-container" id="baseContainer">
+                        <h3>🏰 Sua Base (Proteção: <span id="protectionTimer">60s</span>) <span id="lockStatus"></span></h3>
+                        <p>Slots: <span id="baseSlotCount">5</span>/20 | Próximo upgrade: 💰 <span id="baseUpgradeCost">1000</span></p>
+                        <div class="base-slots" id="baseSlots">
+                            <!-- Base slots will be populated here -->
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <button class="btn" onclick="upgradeBaseSlots()">⬆️ +2 Slots</button>
+                            <button class="btn" onclick="upgradeProtection()">🛡️ +30s Proteção (💰 <span id="protectionCost">2000</span>)</button>
+                            <button class="btn" onclick="toggleBaseLock()" id="lockButton">🔒 Trancar Base (💰 <span id="lockCost">5000</span>)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auctions Content -->
+                <div class="tab-content" id="auctions-content">
+                    <div class="auction-container">
+                        <h3>🔨 Leilões Ativos</h3>
+                        <button class="btn" onclick="openCreateAuction()">📦 Criar Leilão</button>
+                        <div id="auctionsList">
+                            <p>Nenhum leilão ativo no momento.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trades Content -->
+                <div class="tab-content" id="trades-content">
+                    <div class="auction-container">
+                        <h3>🤝 Sistema de Trocas</h3>
+                        <p>Selecione um jogador para iniciar uma troca:</p>
+                        <div id="tradePlayersList">
+                            <!-- Trade players will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Diplomacy Content -->
+                <div class="tab-content" id="diplomacy-content">
+                    <div class="auction-container">
+                        <h3>🏛️ Relações Diplomáticas</h3>
+                        <div id="diplomacyList">
+                            <!-- Diplomacy relations will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Content -->
+                <div class="tab-content" id="stats-content">
+                    <div class="auction-container">
+                        <h3>📊 Estatísticas Detalhadas</h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0;">
+                            <div class="stat-card">
+                                <h4>💰 Economia</h4>
+                                <div class="stat-item">Total Ganho: <span id="statTotalEarned">0</span></div>
+                                <div class="stat-item">Total Gasto: <span id="statTotalSpent">0</span></div>
+                                <div class="stat-item">Lucro Líquido: <span id="statNetProfit">0</span></div>
+                                <div class="stat-item">Renda Atual: <span id="statCurrentIncome">0</span>/s</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <h4>👥 Personagens</h4>
+                                <div class="stat-item">Total Possuídos: <span id="statCharactersOwned">0</span></div>
+                                <div class="stat-item">Tipos Únicos: <span id="statUniqueTypes">0</span></div>
+                                <div class="stat-item">Mais Valioso: <span id="statMostValuable">-</span></div>
+                                <div class="stat-item">Coleção: <span id="statCollectionPercent">0</span>%</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <h4>⚔️ Combate</h4>
+                                <div class="stat-item">Ataques Vencidos: <span id="statAttacksWon">0</span></div>
+                                <div class="stat-item">Ataques Perdidos: <span id="statAttacksLost">0</span></div>
+                                <div class="stat-item">Taxa de Vitória: <span id="statWinRate">0</span>%</div>
+                                <div class="stat-item">Itens Roubados: <span id="statItemsStolen">0</span></div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <h4>🤝 Social</h4>
+                                <div class="stat-item">Trocas Completadas: <span id="statTradesCompleted">0</span></div>
+                                <div class="stat-item">Leilões Vencidos: <span id="statAuctionsWon">0</span></div>
+                                <div class="stat-item">Relações Diplomáticas: <span id="statDiplomaticRelations">0</span></div>
+                                <div class="stat-item">Reputação: <span id="statReputation">Neutro</span></div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <h4>🏰 Base</h4>
+                                <div class="stat-item">Slots Totais: <span id="statBaseSlots">5</span></div>
+                                <div class="stat-item">Proteção Atual: <span id="statProtectionTime">60</span>s</div>
+                                <div class="stat-item">Vezes Trancada: <span id="statTimesLocked">0</span></div>
+                                <div class="stat-item">Upgrades Feitos: <span id="statBaseUpgrades">0</span></div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <h4>⏰ Tempo</h4>
+                                <div class="stat-item">Tempo Total: <span id="statTotalPlayTime">0</span></div>
+                                <div class="stat-item">Sessão Atual: <span id="statSessionTime">0</span></div>
+                                <div class="stat-item">Último Login: <span id="statLastLogin">-</span></div>
+                                <div class="stat-item">Conta Criada: <span id="statAccountAge">-</span></div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; text-align: center;">
+                            <button class="action-button" onclick="exportStats()">📤 Exportar Estatísticas</button>
+                            <button class="action-button" onclick="resetStats()" style="background: linear-gradient(45deg, #e74c3c, #c0392b);">🗑️ Resetar Estatísticas</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="shop-area">
-            <h2 class="section-title">🛒 Loja Premium</h2>
-            <div id="shopItems">
-                <div class="crate-item comum" onclick="buyCrate('basic')">
-                    <div class="crate-name">📦 Crate Básico</div>
-                    <div class="crate-price">$200</div>
-                    <div class="crate-description">Comum a Incomum<br>85% Comum • 15% Incomum</div>
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <h3>🎒 Inventário</h3>
+                <div class="inventory-list" id="inventoryList">
+                    <!-- Inventory items will be populated here -->
                 </div>
                 
-                <div class="crate-item epico" onclick="buyCrate('premium')">
-                    <div class="crate-name">💎 Crate Premium</div>
-                    <div class="crate-price">$800</div>
-                    <div class="crate-description">Raro a Épico<br>60% Raro • 40% Épico</div>
+                <h3 style="margin-top: 20px;">👥 Jogadores (<span id="playerCount">0</span>)</h3>
+                <div class="players-online" id="playersOnline">
+                    <!-- Players will be populated here -->
                 </div>
                 
-                <div class="crate-item lendario" onclick="buyCrate('legendary')">
-                    <div class="crate-name">🌟 Crate Lendário</div>
-                    <div class="crate-price">$2500</div>
-                    <div class="crate-description">Épico a Lendário<br>70% Épico • 30% Lendário</div>
-                </div>
-                
-                <div class="crate-item prismatico" onclick="buyCrate('mythic')">
-                    <div class="crate-name">🔮 Crate Mítico</div>
-                    <div class="crate-price">$8000</div>
-                    <div class="crate-description">Lendário a Prismático<br>80% Lendário • 15% Mítico • 5% Prismático</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="inventory-area">
-            <h2 class="section-title">🎒 Inventário</h2>
-            <div class="inventory-grid" id="inventoryGrid">
-                <div style="grid-column: 1 / -1; text-align: center; color: rgba(255, 255, 255, 0.7); padding: 24px; font-size: 1rem;">
-                    Inventário vazio. Compre crates ou colete da esteira!
-                </div>
-            </div>
-        </div>
-
-        <div class="players-area">
-            <h2 class="section-title">👥 Jogadores Online</h2>
-            <div id="playersList">
-                <div style="text-align: center; color: #00ff88; padding: 24px; font-size: 1rem;">
-                    🎮 Você está jogando!<br>
-                    Aguardando outros jogadores...
-                </div>
-            </div>
-        </div>
-
-        <div class="trading-area">
-            <h2 class="section-title">🔄 Sistema de Trocas</h2>
-            
-            <div id="selectedItems" style="margin: 16px 0;">
-                <div style="font-size: 1rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 12px; font-weight: 500;">Itens selecionados:</div>
-                <div id="selectedItemsList" style="font-size: 0.9rem; color: #00f5ff; font-weight: 600;">Nenhum item selecionado</div>
-            </div>
-            
-            <button class="action-button trade-btn" onclick="tradeWithBot()" id="tradeBotBtn">
-                🤖 Trocar com Bot
-            </button>
-        </div>
-
-        <div class="bases-area">
-            <h2 class="section-title">🏠 Bases dos Jogadores</h2>
-            <div id="basesList">
-                <div style="text-align: center; color: rgba(255, 255, 255, 0.7); padding: 24px; font-size: 1rem;">
-                    Carregando bases...
-                </div>
+                <button class="action-button" onclick="performRebirth()" style="margin-top: 20px;">⭐ REBIRTH (💰 10.000)</button>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <!-- Modals -->
+    <div class="modal" id="playerModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('playerModal')">&times;</button>
+            <h3 id="modalPlayerName">Jogador</h3>
+            <div id="modalPlayerInfo"></div>
+            <div style="margin-top: 20px;">
+                <button class="action-button" onclick="changeDiplomacy('paz')">🕊️ Paz</button>
+                <button class="action-button" onclick="changeDiplomacy('tensao')">⚠️ Tensão</button>
+                <button class="action-button" onclick="changeDiplomacy('embargo')">🚫 Embargo</button>
+                <button class="action-button" onclick="changeDiplomacy('guerra')">⚔️ Guerra</button>
+                <button class="action-button" onclick="attackPlayer()">💥 Atacar</button>
+                <button class="action-button" onclick="openTrade()">🤝 Trocar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="tradeModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('tradeModal')">&times;</button>
+            <h3>🤝 Troca com <span id="tradePartnerName"></span></h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4>Seus Itens:</h4>
+                    <div id="yourTradeItems"></div>
+                </div>
+                <div>
+                    <h4>Itens do Parceiro:</h4>
+                    <div id="partnerTradeItems"></div>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="action-button" onclick="confirmTrade()">✅ Confirmar Troca</button>
+                <button class="action-button" onclick="cancelTrade()">❌ Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="createAuctionModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('createAuctionModal')">&times;</button>
+            <h3>📦 Criar Leilão</h3>
+            <div class="input-group">
+                <label>Selecionar Item:</label>
+                <select id="auctionItemSelect" style="width: 100%; padding: 10px; border-radius: 5px; background: rgba(255,255,255,0.2); color: white; border: none;">
+                    <!-- Options will be populated -->
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Preço Inicial:</label>
+                <input type="number" id="auctionStartPrice" placeholder="Digite o preço inicial...">
+            </div>
+            <div class="input-group">
+                <label>Duração (minutos):</label>
+                <input type="number" id="auctionDuration" value="5" min="1" max="60">
+            </div>
+            <button class="action-button" onclick="createAuctionFinal()">🔨 CRIAR LEILÃO</button>
+        </div>
+    </div>
+
     <script>
-        // Game State
-        let gameState = {
-            money: 100,
-            income: 0,
-            inventory: {},
-            selectedItems: [],
-            playerId: '',
-            playerName: '',
-            roomCode: '',
-            isOnline: false,
-            level: 1,
-            xp: 0,
-            achievements: [],
-            totalSpent: 0,
-            totalEarned: 0,
-            cratesOpened: 0,
-            attacksWon: 0,
-            tradesCompleted: 0,
-            prestige: 0,
-            multiplier: 1.0
-        };
-
-        let roomPlayers = {};
-        let gameListeners = [];
-        let multiplayerClient = null;
-        let currentBeltData = null;
-
-         const characterDatabase = {
-            // Prismáticos (Ultra Raros)
+        // Character Database (mantendo o original)
+        const characterDatabase = {
             "Lá grande Combinação": { rarity: 'secreto', income: 500 },
             "Los combinações": { rarity: 'secreto', income: 450 },
             "Lá suprema combinação": { rarity: 'secreto', income: 600 },
-
-            //Brainrot god(TÁ RARO MAN)
             "Tralalero Tralala": { rarity: 'brainrotgod', income: 250 },
             "Tralali Tralala": { rarity: 'brainrotgod', income: 270 },
             "Matteo": { rarity: 'brainrotgod', income: 290 },
-            
-            
-            // Míticos
-            
             "Centralucci Nuclearucci": { rarity: 'mitico', income: 180 },
             "Chef Crabracadabra": { rarity: 'mitico', income: 160 },
-            
-            // Lendários
             "Bombardiro Cocodrilo": { rarity: 'lendario', income: 80 },
             "Capuccino Asesino": { rarity: 'lendario', income: 75 },
             "Glorbo Fruttodrillo": { rarity: 'lendario', income: 70 },
             "Rhinodino Dildorino": { rarity: 'lendario', income: 65 },
-            
-            // Épicos
             "Tung Tung Tung Sahur": { rarity: 'epico', income: 35 },
             "Bailarina Cappuccina": { rarity: 'lendario', income: 60 },
             "Shpioniro Golubiro": { rarity: 'mitico', income: 140 },
             "La Vaca Saturno Saturnita": { rarity: 'epico', income: 28 },
             "Bombardiere Lucertola": { rarity: 'epico', income: 25 },
-            
-            // Raros
             "Chimpanzini Bananini": { rarity: 'raro', income: 18 },
             "Bombombini Gusini": { rarity: 'raro', income: 16 },
             "Boneca Ambalabu": { rarity: 'raro', income: 15 },
             "Bobrito Bandito": { rarity: 'raro', income: 14 },
             "Burbaloni Lulilolli": { rarity: 'raro', income: 12 },
-            
-            // Incomuns
             "Tripi Tripo": { rarity: 'incomum', income: 8 },
             "Brr Brr Patapim": { rarity: 'incomum', income: 7 },
             "Frigo Camelo": { rarity: 'incomum', income: 6 },
             "Blueberrinni Octopussini": { rarity: 'incomum', income: 5 },
-            
-            // Comuns
-            
             "Lirilì Larilà": { rarity: 'comum', income: 2 },
             "Hipocactus": { rarity: 'comum', income: 2 },
             "Trippi Troppi": { rarity: 'comum', income: 2 },
@@ -1128,999 +953,1283 @@
             "Svinino Bombondino": { rarity: 'comum', income: 1 },
             "Tric Trac Baraboom": { rarity: 'comum', income: 1 },
             "Orangutini Ananasini": { rarity: 'comum', income: 1 },
-            "Espressona Señora": { rarity: 'brainrotgod', income: 1 },
+            "Espressona Señora": { rarity: 'brainrotgod', income: 300 },
             "Zibra Zubra Zibralini": { rarity: 'comum', income: 1 },
-            "Graipussi Medussi": { rarity: 'secreto', income: 1 },
+            "Graipussi Medussi": { rarity: 'secreto', income: 550 },
             "Tigrrullini Watermellini": { rarity: 'comum', income: 1 }
         };
 
-
-        const characterList = Object.keys(characterDatabase);
-
-        const crateTypes = {
-            basic: {
-                price: 200,
-                rarities: [
-                    { rarity: 'comum', chance: 0.85 },
-                    { rarity: 'incomum', chance: 0.15 }
-                ]
-            },
-            premium: {
-                price: 800,
-                rarities: [
-                    { rarity: 'raro', chance: 0.60 },
-                    { rarity: 'epico', chance: 0.40 }
-                ]
-            },
-            legendary: {
-                price: 2500,
-                rarities: [
-                    { rarity: 'epico', chance: 0.70 },
-                    { rarity: 'lendario', chance: 0.30 }
-                ]
-            },
-            mythic: {
-                price: 8000,
-                rarities: [
-                    { rarity: 'mitico', chance: 0.80 },
-                    { rarity: 'brainrotgod', chance: 0.15 },
-                    { rarity: 'secreto', chance: 0.05 }
-                ]
-            }
+        // Game State
+        let gameState = {
+            username: null,
+            money: 100,
+            income: 0,
+            inventory: {},
+            base: {},
+            baseSlots: 5,
+            protectionTime: 60,
+            baseUpgradeCost: 1000,
+            protectionCost: 2000,
+            lockCost: 5000,
+            baseLocked: false,
+            lockDuration: 300, // 5 minutes in seconds
+            lockEndTime: 0,
+            rebirthPoints: 0,
+            diplomacy: {},
+            currentRoom: null,
+            playerName: null,
+            socket: null,
+            conveyorItems: [],
+            auctions: [],
+            trades: {},
+            players: [],
+            currentTrade: null
         };
 
-        // Multiplayer Client Class
-        class MultiplayerClient {
-            constructor() {
-                this.socket = null;
-                this.isConnected = false;
-                this.roomCode = '';
-                this.playerName = '';
-                this.connectionAttempts = 0;
-                this.maxAttempts = 3;
-            }
+        let socket;
+        let conveyorUpdateInterval;
+        let incomeInterval;
 
-            async connect(serverUrl = 'http://localhost:3000') {
-                return new Promise((resolve) => {
-                    console.log(`🔗 Tentando conectar ao servidor: ${serverUrl}`);
-                    updateConnectionStatus('connecting');
-                    
-                    // Timeout para conexão
-                    const connectionTimeout = setTimeout(() => {
-                        console.log('⏰ Timeout de conexão - usando modo offline');
-                        this.isConnected = false;
-                        updateConnectionStatus('error');
-                        resolve(false);
-                    }, 5000);
-
-                    try {
-                        this.socket = io(serverUrl, {
-                            timeout: 5000,
-                            transports: ['websocket', 'polling']
-                        });
-                        
-                        this.socket.on('connect', () => {
-                            clearTimeout(connectionTimeout);
-                            this.isConnected = true;
-                            this.connectionAttempts = 0;
-                            console.log('🔗 Conectado ao servidor multiplayer!');
-                            updateConnectionStatus('connected');
-                            resolve(true);
-                        });
-
-                        this.socket.on('disconnect', () => {
-                            this.isConnected = false;
-                            console.log('❌ Desconectado do servidor');
-                            updateConnectionStatus('error');
-                            showNotification('🔴 Conexão perdida - Modo offline ativo', 'warning');
-                        });
-
-                        this.socket.on('connect_error', (error) => {
-                            clearTimeout(connectionTimeout);
-                            console.log('❌ Erro de conexão:', error.message);
-                            this.connectionAttempts++;
-                            
-                            if (this.connectionAttempts >= this.maxAttempts) {
-                                console.log('🔄 Máximo de tentativas atingido - usando modo offline');
-                                updateConnectionStatus('error');
-                                resolve(false);
-                            }
-                        });
-
-                        this.socket.on('joinSuccess', (data) => {
-                            console.log('✅ Entrou na sala:', data);
-                            gameState.isOnline = true;
-                            document.getElementById('onlineCount').textContent = data.playerCount;
-                            showNotification(`🎮 Multiplayer ativo! ${data.playerCount} jogadores online`, 'success');
-                            
-                            // Sincronizar esteira se fornecida
-                            if (data.beltSeed) {
-                                currentBeltData = generateBeltFromSeed(data.beltSeed);
-                                updateBeltDisplay(currentBeltData);
-                            }
-                        });
-
-                        this.socket.on('playersUpdate', (players) => {
-                            updateMultiplayerPlayers(players);
-                            document.getElementById('onlineCount').textContent = players.length;
-                        });
-
-                        this.socket.on('beltUpdate', (data) => {
-                            console.log('🔄 Sincronizando esteira do servidor');
-                            currentBeltData = generateBeltFromSeed(data.seed);
-                            updateBeltDisplay(currentBeltData);
-                            showNotification('🔄 Esteira sincronizada!', 'info');
-                        });
-
-                        this.socket.on('itemSold', (data) => {
-                            markItemAsSold(data.itemName);
-                            if (data.buyerName !== this.playerName) {
-                                showNotification(`${data.buyerName} comprou ${data.itemName}!`, 'info');
-                            }
-                        });
-
-                        this.socket.on('attackResult', (data) => {
-                            if (data.success && data.attackerName !== this.playerName) {
-                                showNotification(`⚔️ ${data.attackerName} atacou com sucesso!`, 'warning');
-                            }
-                        });
-
-                        this.socket.on('tradeOffer', (data) => {
-                            if (data.fromName !== this.playerName) {
-                                showNotification(`💱 ${data.fromName} quer trocar!`, 'info');
-                            }
-                        });
-
-                    } catch (error) {
-                        clearTimeout(connectionTimeout);
-                        console.log('❌ Erro ao inicializar socket:', error);
-                        updateConnectionStatus('error');
-                        resolve(false);
-                    }
-                });
-            }
-
-            joinRoom(playerName, roomCode, playerData) {
-                if (!this.isConnected) return false;
-                
-                this.playerName = playerName;
-                this.roomCode = roomCode;
-                
-                this.socket.emit('joinRoom', {
-                    playerName,
-                    roomCode,
-                    playerData
-                });
-                
-                return true;
-            }
-
-            buyItem(itemName, price) {
-                if (!this.isConnected) return false;
-                
-                this.socket.emit('buyItem', { itemName, price });
-                return true;
-            }
-
-            updatePlayer(playerData) {
-                if (!this.isConnected) return;
-                
-                this.socket.emit('playerUpdate', playerData);
-            }
-
-            sendAttack(targetId, success, stolenItem) {
-                if (!this.isConnected) return;
-                
-                this.socket.emit('attack', { targetId, success, stolenItem });
-            }
-
-            sendTrade(targetId, offeredItems, requestedItems) {
-                if (!this.isConnected) return;
-                
-                this.socket.emit('trade', { targetId, offeredItems, requestedItems });
-            }
-        }
-
-        // Funções auxiliares do multiplayer
-        function updateConnectionStatus(status) {
-            const statusElement = document.getElementById('connectionStatus');
+        // Account System
+        function switchAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
             
-            switch(status) {
-                case 'connected':
-                    statusElement.className = 'connection-status connected';
-                    statusElement.innerHTML = '🟢 Multiplayer Ativo - Sincronizado!';
-                    break;
-                case 'connecting':
-                    statusElement.className = 'connection-status connecting';
-                    statusElement.innerHTML = '🟡 Conectando ao servidor...';
-                    break;
-                case 'error':
-                default:
-                    statusElement.className = 'connection-status error';
-                    statusElement.innerHTML = '🔴 Modo Offline - Totalmente Funcional!';
-                    break;
-            }
-        }
-
-        function updateMultiplayerPlayers(players) {
-            const playersList = document.getElementById('playersList');
-            
-            if (!players || players.length <= 1) {
-                playersList.innerHTML = `
-                    <div style="text-align: center; color: #00ff88; padding: 24px; font-size: 1rem;">
-                        🎮 Você está jogando!<br>
-                        <strong>Código da sala: ${gameState.roomCode}</strong><br>
-                        <span style="color: rgba(255, 255, 255, 0.7);">Aguardando outros jogadores...</span>
-                    </div>
-                `;
-                return;
-            }
-
-            playersList.innerHTML = players.map(player => {
-                const isCurrentPlayer = player.name === gameState.playerName;
-                return `
-                    <div class="player-card ${isCurrentPlayer ? 'current-player' : ''}">
-                        <div class="player-name">
-                            ${isCurrentPlayer ? '👑 ' : ''}${player.name}
-                            <span class="online-indicator"></span>
-                        </div>
-                        <div class="player-stats">
-                            💰 $${(player.money || 0).toLocaleString()}<br>
-                            📈 $${(player.income || 0)}/seg<br>
-                            🎒 ${Object.keys(player.inventory || {}).length} itens únicos
-                        </div>
-                        ${!isCurrentPlayer ? `
-                            <button class="action-button attack-btn" onclick="attackPlayer('${player.socketId}', '${player.name}')" style="margin-top: 12px; padding: 8px 16px; font-size: 0.9rem;">
-                                ⚔️ Atacar
-                            </button>
-                        ` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function markItemAsSold(itemName) {
-            if (!currentBeltData) return;
-            
-            if (!currentBeltData.soldItems) {
-                currentBeltData.soldItems = [];
-            }
-            
-            if (!currentBeltData.soldItems.includes(itemName)) {
-                currentBeltData.soldItems.push(itemName);
-                updateBeltDisplay(currentBeltData);
-            }
-        }
-
-        function generateBeltFromSeed(seed) {
-            // Usar seed para gerar esteira determinística
-            console.log('🎲 Gerando esteira a partir do seed:', seed);
-            
-            // Implementar gerador pseudo-aleatório baseado em seed
-            let seedValue = seed;
-            function seededRandom() {
-                seedValue = (seedValue * 9301 + 49297) % 233280;
-                return seedValue / 233280;
-            }
-            
-            const beltCharacters = [];
-            const availableChars = [...characterList];
-            
-            // Embaralhar usando seed
-            for (let i = availableChars.length - 1; i > 0; i--) {
-                const j = Math.floor(seededRandom() * (i + 1));
-                [availableChars[i], availableChars[j]] = [availableChars[j], availableChars[i]];
-            }
-            
-            const targetItems = 10 + Math.floor(seededRandom() * 9);
-            
-            for (let i = 0; i < targetItems && i < availableChars.length; i++) {
-                beltCharacters.push(availableChars[i]);
-            }
-            
-            const beltItems = beltCharacters.map((charName, index) => {
-                const char = characterDatabase[charName];
-                const basePrice = char.income * (12 + Math.floor(seededRandom() * 8));
-                const variation = (seededRandom() - 0.5) * 0.6;
-                const price = Math.floor(basePrice * (1 + variation));
-                return {
-                    name: charName,
-                    rarity: char.rarity,
-                    income: char.income,
-                    price: Math.max(price, 1),
-                    id: `item_${seed}_${index}`
-                };
-            });
-            
-            return {
-                items: beltItems,
-                soldItems: [],
-                lastUpdate: Date.now(),
-                seed: seed
-            };
-        }
-
-        function attackPlayer(targetId, targetName) {
-            if (!multiplayerClient || !multiplayerClient.isConnected) {
-                showNotification('⚠️ Multiplayer não conectado!', 'warning');
-                return;
-            }
-            
-            const success = Math.random() <= 0.45;
-            let stolenItem = null;
-            
-            if (success) {
-                const commonItems = characterList.filter(name => 
-                    characterDatabase[name].rarity === 'comum' || 
-                    characterDatabase[name].rarity === 'incomum'
-                );
-                stolenItem = commonItems[Math.floor(Math.random() * commonItems.length)];
-                
-                if (gameState.inventory[stolenItem]) {
-                    gameState.inventory[stolenItem]++;
-                } else {
-                    gameState.inventory[stolenItem] = 1;
-                }
-                
-                calculateIncome();
-                updateInventoryDisplay();
-                updateDisplay();
-                savePlayerData();
-                
-                showNotification(`⚔️ Roubou ${stolenItem} de ${targetName}!`, 'success');
+            if (tab === 'login') {
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('registerForm').style.display = 'none';
             } else {
-                showNotification(`❌ Falhou ao atacar ${targetName}!`, 'failure');
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'block';
             }
-            
-            multiplayerClient.sendAttack(targetId, success, stolenItem);
-            
-            // Atualizar dados do jogador no servidor
-            multiplayerClient.updatePlayer({
-                money: gameState.money,
-                income: gameState.income,
-                inventory: gameState.inventory
-            });
         }
 
-        // Login Function
-        async function joinGame() {
-            const playerName = document.getElementById('playerName').value.trim();
-            const roomCode = document.getElementById('roomCode').value.trim().toUpperCase();
-            
-            if (!playerName || !roomCode) {
-                showNotification('Preencha nome e código da sala!', 'failure');
+        function registerUser() {
+            const username = document.getElementById('registerUsername').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!username || !password) {
+                showNotification('❌ Preencha todos os campos!');
                 return;
             }
-            
-            if (playerName.length < 2) {
-                showNotification('Nome deve ter pelo menos 2 caracteres!', 'failure');
+
+            if (password !== confirmPassword) {
+                showNotification('❌ Senhas não coincidem!');
                 return;
             }
+
+            // Check if user already exists
+            const existingUser = localStorage.getItem(`user_${username}`);
+            if (existingUser) {
+                showNotification('❌ Usuário já existe!');
+                return;
+            }
+
+            // Create new account
+            const userData = {
+                username: username,
+                password: password,
+                money: 100,
+                income: 0,
+                inventory: {},
+                createdAt: Date.now()
+            };
+
+            localStorage.setItem(`user_${username}`, JSON.stringify(userData));
+            showNotification('✅ Conta criada com sucesso!');
             
-            gameState.playerName = playerName;
-            gameState.roomCode = roomCode;
-            gameState.playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            
-            document.getElementById('currentPlayer').textContent = playerName;
-            document.getElementById('currentRoom').textContent = roomCode;
-            document.getElementById('loginScreen').style.display = 'none';
-            
-            // Initialize game
-            await initializeGame();
-            
-            showNotification(`🎮 Bem-vindo ao futuro, ${playerName}! Sala: ${roomCode}`, 'success');
+            // Auto login
+            gameState.username = username;
+            loadUserData();
+            showRoomSelection();
         }
 
-        // Inicialização do Jogo
-        async function initializeGame() {
-            console.log('🚀 Inicializando Character Tycoon Next Gen...');
-            
-            // Tentar conectar multiplayer primeiro
-            multiplayerClient = new MultiplayerClient();
-            
-            // Tentar diferentes URLs de servidor
-            const serverUrls = [
-                'http://localhost:3000',
-                'https://stealalobogoat-production.up.railway.app/',
+        function loginUser() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                showNotification('❌ Preencha todos os campos!');
+                return;
+            }
+
+            const userData = localStorage.getItem(`user_${username}`);
+            if (!userData) {
+                showNotification('❌ Usuário não encontrado!');
+                return;
+            }
+
+            const user = JSON.parse(userData);
+            if (user.password !== password) {
+                showNotification('❌ Senha incorreta!');
+                return;
+            }
+
+            gameState.username = username;
+            loadUserData();
+            showNotification('✅ Login realizado com sucesso!');
+            showRoomSelection();
+        }
+
+        function loadUserData() {
+            const userData = localStorage.getItem(`user_${gameState.username}`);
+            if (userData) {
+                const user = JSON.parse(userData);
                 
-            ];
-            
-            let connected = false;
-            for (const url of serverUrls) {
-                try {
-                    connected = await multiplayerClient.connect(url);
-                    if (connected) {
-                        console.log(`✅ Conectado ao servidor: ${url}`);
-                        break;
-                    }
-                } catch (error) {
-                    console.log(`❌ Falha ao conectar: ${url}`);
+                // Carregar TODOS os dados do jogador
+                gameState.money = user.money || 100;
+                gameState.income = user.income || 0;
+                gameState.inventory = user.inventory || {};
+                gameState.base = user.base || {};
+                gameState.baseSlots = user.baseSlots || 5;
+                gameState.protectionTime = user.protectionTime || 60;
+                gameState.baseUpgradeCost = user.baseUpgradeCost || 1000;
+                gameState.protectionCost = user.protectionCost || 2000;
+                gameState.lockCost = user.lockCost || 5000;
+                gameState.baseLocked = user.baseLocked || false;
+                gameState.lockEndTime = user.lockEndTime || 0;
+                gameState.lockDuration = user.lockDuration || 300;
+                gameState.rebirthPoints = user.rebirthPoints || 0;
+                gameState.diplomacy = user.diplomacy || {};
+                gameState.totalEarned = user.totalEarned || 0;
+                gameState.totalSpent = user.totalSpent || 0;
+                gameState.charactersOwned = user.charactersOwned || 0;
+                gameState.attacksWon = user.attacksWon || 0;
+                gameState.attacksLost = user.attacksLost || 0;
+                gameState.tradesCompleted = user.tradesCompleted || 0;
+                gameState.auctionsWon = user.auctionsWon || 0;
+                gameState.playTime = user.playTime || 0;
+                gameState.lastLogin = Date.now();
+                
+                // Verificar se o lock expirou
+                if (gameState.baseLocked && gameState.lockEndTime < Date.now()) {
+                    gameState.baseLocked = false;
+                    gameState.lockEndTime = 0;
                 }
+                
+                updateUI();
+                showNotification(`✅ Bem-vindo de volta, ${gameState.username}!`);
             }
+        }
+
+        function saveUserData() {
+            if (!gameState.username) return;
             
-            if (connected) {
-                // Tentar entrar na sala multiplayer
-                const joined = multiplayerClient.joinRoom(
-                    gameState.playerName, 
-                    gameState.roomCode, 
-                    {
+            try {
+                const existingData = localStorage.getItem(`user_${gameState.username}`);
+                const password = existingData ? JSON.parse(existingData).password : '';
+                
+                const userData = {
+                    username: gameState.username,
+                    password: password,
+                    
+                    // Dados principais
+                    money: gameState.money,
+                    income: gameState.income,
+                    inventory: gameState.inventory,
+                    
+                    // Base completa
+                    base: gameState.base,
+                    baseSlots: gameState.baseSlots,
+                    protectionTime: gameState.protectionTime,
+                    baseUpgradeCost: gameState.baseUpgradeCost,
+                    protectionCost: gameState.protectionCost,
+                    lockCost: gameState.lockCost,
+                    baseLocked: gameState.baseLocked,
+                    lockEndTime: gameState.lockEndTime,
+                    lockDuration: gameState.lockDuration,
+                    
+                    // Progressão
+                    rebirthPoints: gameState.rebirthPoints,
+                    diplomacy: gameState.diplomacy,
+                    
+                    // Estatísticas
+                    totalEarned: gameState.totalEarned || 0,
+                    totalSpent: gameState.totalSpent || 0,
+                    charactersOwned: Object.values(gameState.inventory).reduce((sum, count) => sum + count, 0),
+                    attacksWon: gameState.attacksWon || 0,
+                    attacksLost: gameState.attacksLost || 0,
+                    tradesCompleted: gameState.tradesCompleted || 0,
+                    auctionsWon: gameState.auctionsWon || 0,
+                    playTime: gameState.playTime || 0,
+                    
+                    // Metadados
+                    lastSaved: Date.now(),
+                    lastLogin: gameState.lastLogin || Date.now(),
+                    createdAt: existingData ? JSON.parse(existingData).createdAt : Date.now()
+                };
+
+                localStorage.setItem(`user_${gameState.username}`, JSON.stringify(userData));
+                
+                // Backup adicional com timestamp
+                localStorage.setItem(`backup_${gameState.username}_${Date.now()}`, JSON.stringify(userData));
+                
+                // Limpar backups antigos (manter apenas os 3 mais recentes)
+                cleanOldBackups();
+                
+            } catch (error) {
+                console.error('Erro ao salvar dados:', error);
+                showNotification('⚠️ Erro ao salvar progresso!');
+            }
+        }
+
+        function cleanOldBackups() {
+            try {
+                const backupKeys = Object.keys(localStorage)
+                    .filter(key => key.startsWith(`backup_${gameState.username}_`))
+                    .sort()
+                    .reverse();
+                
+                // Manter apenas os 3 backups mais recentes
+                for (let i = 3; i < backupKeys.length; i++) {
+                    localStorage.removeItem(backupKeys[i]);
+                }
+            } catch (error) {
+                console.error('Erro ao limpar backups:', error);
+            }
+        }
+
+        function showRoomSelection() {
+            document.getElementById('roomSection').style.display = 'block';
+            initSocket();
+        }
+
+        function joinRoom() {
+            const roomCode = document.getElementById('roomCode').value.trim();
+            if (!roomCode) {
+                showNotification('❌ Digite o código da sala!');
+                return;
+            }
+
+            gameState.currentRoom = roomCode;
+            gameState.playerName = gameState.username;
+            
+            // Hide login and show game
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'grid';
+            
+            // Try to connect to socket
+            if (socket && socket.connected) {
+                socket.emit('joinRoom', {
+                    username: gameState.username,
+                    roomCode: roomCode,
+                    playerData: {
                         money: gameState.money,
                         income: gameState.income,
                         inventory: gameState.inventory
                     }
-                );
-                
-                if (joined) {
-                    console.log('🎮 Modo multiplayer ativado!');
-                    gameState.isOnline = true;
-                } else {
-                    console.log('⚠️ Falha ao entrar na sala, usando modo offline');
-                    initializeOfflineGame();
-                }
-            } else {
-                console.log('🔄 Servidor não disponível, usando modo offline');
-                initializeOfflineGame();
-            }
-            
-            console.log('✅ Jogo Next Gen inicializado com sucesso!');
-        }
-
-        function initializeOfflineGame() {
-            console.log('🎮 Iniciando modo offline Next Gen...');
-            gameState.isOnline = false;
-            
-            // Load from localStorage
-            const savedData = localStorage.getItem(`tycoon_nextgen_${gameState.playerName}_${gameState.roomCode}`);
-            if (savedData) {
-                try {
-                    const data = JSON.parse(savedData);
-                    gameState.money = data.money || 100;
-                    gameState.inventory = data.inventory || {};
-                    console.log('✅ Save Next Gen carregado do localStorage');
-                } catch (e) {
-                    console.log('⚠️ Erro ao carregar save, usando dados padrão');
-                }
-            }
-            
-            // Calculate and update displays
-            calculateIncome();
-            updateDisplay();
-            updateInventoryDisplay();
-            
-            // Initialize belt
-            console.log('🏭 Gerando esteira Next Gen...');
-            if (!currentBeltData) {
-                currentBeltData = generateNewBelt();
-            }
-            updateBeltDisplay(currentBeltData);
-            console.log('✅ Esteira Next Gen carregada com', currentBeltData.items.length, 'itens');
-            
-            // Initialize players display
-            updatePlayersDisplay();
-            
-            // Start game loops
-            startGameLoops();
-            
-            showNotification('🚀 Jogo Next Gen funcionando perfeitamente!', 'success');
-            console.log('✅ Modo offline Next Gen inicializado!');
-        }
-
-        function savePlayerData() {
-            try {
-                const data = {
-                    money: gameState.money,
-                    inventory: gameState.inventory,
-                    lastSave: Date.now()
-                };
-                localStorage.setItem(`tycoon_nextgen_${gameState.playerName}_${gameState.roomCode}`, JSON.stringify(data));
-                console.log('💾 Dados Next Gen salvos no localStorage');
-            } catch (error) {
-                console.error('Erro ao salvar:', error);
-            }
-        }
-
-        // Sistema de aleatoriedade verdadeira com crypto
-        function generateTrueRandom() {
-            if (window.crypto && window.crypto.getRandomValues) {
-                const array = new Uint32Array(1);
-                window.crypto.getRandomValues(array);
-                return array[0] / (0xffffffff + 1);
-            }
-            // Fallback com múltiplas fontes de entropia
-            const time = Date.now();
-            const perf = performance.now();
-            const mouse = Math.random();
-            return ((time * perf * mouse) % 1000000) / 1000000;
-        }
-
-        function shuffleArray(array) {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(generateTrueRandom() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled;
-        }
-
-        function generateNewBelt() {
-            console.log('🎲 Gerando nova esteira com aleatoriedade verdadeira...');
-            
-            // Usar timestamp + performance + crypto para seed único
-            const uniqueSeed = Date.now() + performance.now() + (generateTrueRandom() * 1000000);
-            console.log('🔢 Seed único:', uniqueSeed);
-            
-            const beltCharacters = [];
-            const availableChars = shuffleArray(characterList);
-            
-            // Gerar entre 10-18 itens com distribuição balanceada
-            const targetItems = 10 + Math.floor(generateTrueRandom() * 9);
-            
-            // Garantir pelo menos um de cada raridade
-            const rarityGroups = {
-                'comum': characterList.filter(name => characterDatabase[name].rarity === 'comum'),
-                'incomum': characterList.filter(name => characterDatabase[name].rarity === 'incomum'),
-                'raro': characterList.filter(name => characterDatabase[name].rarity === 'raro'),
-                'epico': characterList.filter(name => characterDatabase[name].rarity === 'epico'),
-                'lendario': characterList.filter(name => characterDatabase[name].rarity === 'lendario'),
-                'mitico': characterList.filter(name => characterDatabase[name].rarity === 'mitico'),
-                'prismatico': characterList.filter(name => characterDatabase[name].rarity === 'prismatico')
-            };
-            
-            // Adicionar pelo menos um comum e incomum
-            beltCharacters.push(
-                rarityGroups.comum[Math.floor(generateTrueRandom() * rarityGroups.comum.length)],
-                rarityGroups.incomum[Math.floor(generateTrueRandom() * rarityGroups.incomum.length)]
-            );
-            
-            // Preencher o resto com distribuição probabilística
-            while (beltCharacters.length < targetItems) {
-                const rand = generateTrueRandom();
-                let selectedRarity;
-                
-                if (rand < 0.40) selectedRarity = 'comum';
-                else if (rand < 0.65) selectedRarity = 'incomum';
-                else if (rand < 0.80) selectedRarity = 'raro';
-                else if (rand < 0.92) selectedRarity = 'epico';
-                else if (rand < 0.97) selectedRarity = 'lendario';
-                else if (rand < 0.995) selectedRarity = 'mitico';
-                else selectedRarity = 'prismatico';
-                
-                const candidates = rarityGroups[selectedRarity];
-                if (candidates.length > 0) {
-                    const randomChar = candidates[Math.floor(generateTrueRandom() * candidates.length)];
-                    if (!beltCharacters.includes(randomChar)) {
-                        beltCharacters.push(randomChar);
-                    }
-                }
-            }
-            
-            // Embaralhar ordem final múltiplas vezes
-            let finalBelt = shuffleArray(beltCharacters);
-            finalBelt = shuffleArray(finalBelt);
-            finalBelt = shuffleArray(finalBelt);
-            
-            const beltItems = finalBelt.map(charName => {
-                const char = characterDatabase[charName];
-                const basePrice = char.income * (12 + Math.floor(generateTrueRandom() * 8));
-                const variation = (generateTrueRandom() - 0.5) * 0.6; // ±30% variation
-                const price = Math.floor(basePrice * (1 + variation));
-                return {
-                    name: charName,
-                    rarity: char.rarity,
-                    income: char.income,
-                    price: Math.max(price, 1),
-                    id: `item_${Date.now()}_${Math.floor(generateTrueRandom() * 1000000)}`
-                };
-            });
-            
-            console.log('✅ Esteira gerada:', beltItems.map(i => `${i.name} (${i.rarity})`));
-            
-            return {
-                items: beltItems,
-                soldItems: [],
-                lastUpdate: Date.now(),
-                seed: uniqueSeed
-            };
-        }
-
-        function updateBeltDisplay(beltData) {
-            const beltItems = document.getElementById('beltItems');
-            
-            beltItems.innerHTML = beltData.items.map(item => {
-                const isSold = beltData.soldItems && beltData.soldItems.includes(item.name);
-                return `
-                    <div class="belt-item ${item.rarity} ${isSold ? 'sold-out' : ''}" 
-                         onclick="${isSold ? '' : `buyFromBelt('${item.name}', ${item.price})`}">
-                        ${item.name}<br>
-                        <small>+$${item.income}/seg</small>
-                        <div class="belt-item-price">${isSold ? 'VENDIDO' : '$' + item.price}</div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function buyFromBelt(characterName, price) {
-            const char = characterDatabase[characterName];
-            if (!char) {
-                console.log('Personagem não encontrado:', characterName);
-                return;
-            }
-            
-            if (gameState.money < price) {
-                showNotification('💰 Dinheiro insuficiente!', 'failure');
-                return;
-            }
-            
-            // Verificar se já foi vendido (multiplayer ou local)
-            if (currentBeltData && currentBeltData.soldItems && currentBeltData.soldItems.includes(characterName)) {
-                showNotification('⚠️ Item já foi vendido!', 'warning');
-                return;
-            }
-            
-            const soldKey = `sold_nextgen_${gameState.roomCode}_${characterName}`;
-            if (localStorage.getItem(soldKey)) {
-                showNotification('⚠️ Item já foi vendido!', 'warning');
-                return;
-            }
-            
-            // Tentar comprar via multiplayer primeiro
-            if (multiplayerClient && multiplayerClient.isConnected) {
-                const success = multiplayerClient.buyItem(characterName, price);
-                if (!success) {
-                    showNotification('❌ Erro na compra multiplayer!', 'failure');
-                    return;
-                }
-            } else {
-                // Marcar como vendido localmente
-                localStorage.setItem(soldKey, 'true');
-            }
-            
-            // Atualizar inventário do jogador
-            gameState.money -= price;
-            
-            if (gameState.inventory[characterName]) {
-                gameState.inventory[characterName]++;
-            } else {
-                gameState.inventory[characterName] = 1;
-            }
-            
-            calculateIncome();
-            updateInventoryDisplay();
-            updateDisplay();
-            savePlayerData();
-            
-            // Marcar como vendido na esteira atual
-            if (currentBeltData) {
-                if (!currentBeltData.soldItems) {
-                    currentBeltData.soldItems = [];
-                }
-                currentBeltData.soldItems.push(characterName);
-                updateBeltDisplay(currentBeltData);
-            }
-            
-            // Atualizar dados no servidor se conectado
-            if (multiplayerClient && multiplayerClient.isConnected) {
-                multiplayerClient.updatePlayer({
-                    money: gameState.money,
-                    income: gameState.income,
-                    inventory: gameState.inventory
                 });
             }
             
-            showNotification(`✅ Comprou ${characterName} por $${price}!`, 'success');
+            startGameLoop();
+            showNotification('🎮 Entrou na sala: ' + roomCode);
         }
 
-        function buyCrate(crateType) {
-            const crate = crateTypes[crateType];
-            if (!crate) return;
+        // Socket Connection
+        function initSocket() {
+            const serverUrls = [
+                'http://localhost:3000',
+                'https://stealalobogoat-production.up.railway.app/'
+            ];
             
-            if (gameState.money < crate.price) {
-                showNotification('💰 Dinheiro insuficiente!', 'failure');
-                return;
+            try {
+                socket = io(serverUrls[1]); // Try production first
+                gameState.socket = socket;
+
+                socket.on('connect', () => {
+                    document.getElementById('connectionStatus').innerHTML = '🟢 Conectado';
+                });
+
+                socket.on('disconnect', () => {
+                    document.getElementById('connectionStatus').innerHTML = '🔴 Desconectado';
+                });
+
+                socket.on('roomJoined', (data) => {
+                    gameState.players = data.players;
+                    updatePlayersList();
+                });
+
+                socket.on('playersUpdate', (players) => {
+                    gameState.players = players;
+                    updatePlayersList();
+                });
+
+                socket.on('conveyorUpdate', (items) => {
+                    gameState.conveyorItems = items;
+                    updateConveyor();
+                });
+
+                socket.on('auctionsUpdate', (auctions) => {
+                    gameState.auctions = auctions;
+                    updateAuctions();
+                });
+
+                socket.on('notification', (message) => {
+                    showNotification(message);
+                });
+
+            } catch (error) {
+                console.error('Socket error:', error);
+                document.getElementById('connectionStatus').innerHTML = '🔴 Erro de Conexão';
+            }
+        }
+
+        // Game Loop
+        function startGameLoop() {
+            gameState.sessionStartTime = Date.now();
+            
+            // Income per second
+            incomeInterval = setInterval(() => {
+                const incomeGained = gameState.income;
+                gameState.money += incomeGained;
+                gameState.totalEarned = (gameState.totalEarned || 0) + incomeGained;
+                gameState.playTime = (gameState.playTime || 0) + 1; // +1 second
+                
+                updateUI();
+                updateBase(); // Update base protection timers
+                updateBaseLock(); // Update base lock status
+                saveUserData(); // Auto-save every second
+            }, 1000);
+
+            // Update conveyor every 15 seconds (when animation completes)
+            conveyorUpdateInterval = setInterval(() => {
+                generateConveyorItems();
+            }, 15000);
+
+            // Initial conveyor and base
+            generateConveyorItems();
+            updateBase();
+            updateBaseLock();
+        }
+
+        function generateConveyorItems() {
+            const items = [];
+            const characters = Object.keys(characterDatabase);
+            
+            for (let i = 0; i < 6; i++) {
+                const randomChar = characters[Math.floor(Math.random() * characters.length)];
+                const price = calculatePrice(randomChar);
+                items.push({
+                    id: Date.now() + i,
+                    name: randomChar,
+                    price: price,
+                    rarity: characterDatabase[randomChar].rarity
+                });
             }
             
-            gameState.money -= crate.price;
+            gameState.conveyorItems = items;
+            updateConveyor();
             
-            // Determine rarity
-            const rand = Math.random();
-            let cumulativeChance = 0;
-            let selectedRarity = 'comum';
+            if (socket && gameState.currentRoom) {
+                socket.emit('updateConveyor', {
+                    roomCode: gameState.currentRoom,
+                    items: items
+                });
+            }
+        }
+
+        function calculatePrice(characterName) {
+            const character = characterDatabase[characterName];
+            const basePrice = character.income * 15;
+            const rarityMultiplier = {
+                'comum': 1,
+                'incomum': 2,
+                'raro': 4,
+                'epico': 8,
+                'lendario': 16,
+                'mitico': 32,
+                'secreto': 64,
+                'brainrotgod': 100
+            };
+            return Math.floor(basePrice * (rarityMultiplier[character.rarity] || 1));
+        }
+
+        function updateConveyor() {
+            const container = document.getElementById('conveyorTrack');
+            container.innerHTML = '';
             
-            for (let rarityData of crate.rarities) {
-                cumulativeChance += rarityData.chance;
-                if (rand <= cumulativeChance) {
-                    selectedRarity = rarityData.rarity;
-                    break;
+            gameState.conveyorItems.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = `character-card rarity-${item.rarity}`;
+                card.innerHTML = `
+                    <div><strong>${item.name}</strong></div>
+                    <div>💰 ${item.price}</div>
+                    <div>💸 +${characterDatabase[item.name].income}/s</div>
+                `;
+                card.onclick = () => buyCharacter(index);
+                container.appendChild(card);
+            });
+        }
+
+        function buyCharacter(index) {
+            const item = gameState.conveyorItems[index];
+            if (!item) return;
+            
+            if (gameState.money >= item.price) {
+                gameState.money -= item.price;
+                
+                // Atualizar estatísticas
+                gameState.totalSpent = (gameState.totalSpent || 0) + item.price;
+                
+                // Add to inventory
+                if (gameState.inventory[item.name]) {
+                    gameState.inventory[item.name]++;
+                } else {
+                    gameState.inventory[item.name] = 1;
+                }
+                
+                // Add to base if there's space
+                addToBase(item.name);
+                
+                // Add income
+                gameState.income += characterDatabase[item.name].income;
+                
+                // Remove from conveyor
+                gameState.conveyorItems.splice(index, 1);
+                
+                updateUI();
+                updateConveyor();
+                updateBase();
+                saveUserData();
+                
+                if (socket) {
+                    socket.emit('characterPurchased', {
+                        roomCode: gameState.currentRoom,
+                        username: gameState.username,
+                        character: item.name,
+                        conveyorItems: gameState.conveyorItems
+                    });
+                }
+                
+                showNotification(`✅ Comprou ${item.name}!`);
+            } else {
+                showNotification('❌ Dinheiro insuficiente!');
+            }
+        }
+
+        function addToBase(characterName) {
+            const emptySlots = gameState.baseSlots - Object.keys(gameState.base).length;
+            if (emptySlots > 0) {
+                const slotId = `slot_${Date.now()}`;
+                gameState.base[slotId] = {
+                    character: characterName,
+                    protected: true,
+                    protectionEnd: Date.now() + (gameState.protectionTime * 1000)
+                };
+            }
+        }
+
+        function updateBase() {
+            const container = document.getElementById('baseSlots');
+            container.innerHTML = '';
+            
+            // Create slots
+            for (let i = 0; i < gameState.baseSlots; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'base-slot';
+                
+                // Find character for this slot
+                const slotEntries = Object.entries(gameState.base);
+                if (slotEntries[i]) {
+                    const [slotId, slotData] = slotEntries[i];
+                    const timeLeft = Math.max(0, slotData.protectionEnd - Date.now());
+                    const isProtected = timeLeft > 0;
+                    
+                    slot.classList.add('occupied');
+                    slot.innerHTML = `
+                        <div style="font-size: 10px; text-align: center;">
+                            <strong>${slotData.character}</strong><br>
+                            ${isProtected ? `🛡️ ${Math.ceil(timeLeft/1000)}s` : '⚠️ Vulnerável'}
+                        </div>
+                    `;
+                    
+                    if (!isProtected && !gameState.baseLocked) {
+                        slot.style.borderColor = '#e74c3c';
+                    }
+                } else {
+                    slot.innerHTML = '<div style="color: rgba(255,255,255,0.5);">Vazio</div>';
+                }
+                
+                container.appendChild(slot);
+            }
+        }
+
+        function upgradeBaseSlots() {
+            const cost = gameState.baseUpgradeCost || 1000;
+            if (gameState.money >= cost && gameState.baseSlots < 20) {
+                gameState.money -= cost;
+                gameState.totalSpent = (gameState.totalSpent || 0) + cost;
+                gameState.baseSlots += 2;
+                gameState.baseUpgradeCost = Math.floor(cost * 1.5);
+                gameState.baseUpgrades = (gameState.baseUpgrades || 0) + 1;
+                
+                updateUI();
+                updateBase();
+                saveUserData();
+                showNotification('🏰 Base expandida!');
+            } else if (gameState.baseSlots >= 20) {
+                showNotification('❌ Limite máximo de slots atingido!');
+            } else {
+                showNotification('❌ Dinheiro insuficiente!');
+            }
+        }
+
+        function upgradeProtection() {
+            const cost = gameState.protectionCost || 2000;
+            if (gameState.money >= cost) {
+                gameState.money -= cost;
+                gameState.totalSpent = (gameState.totalSpent || 0) + cost;
+                gameState.protectionTime += 30;
+                gameState.protectionCost = Math.floor(cost * 1.8);
+                gameState.baseUpgrades = (gameState.baseUpgrades || 0) + 1;
+                
+                updateUI();
+                saveUserData();
+                showNotification('🛡️ Proteção aumentada!');
+            } else {
+                showNotification('❌ Dinheiro insuficiente!');
+            }
+        }
+
+        // Base Lock System
+        function toggleBaseLock() {
+            if (gameState.baseLocked) {
+                // Unlock base (free)
+                gameState.baseLocked = false;
+                gameState.lockEndTime = 0;
+                updateBaseLock();
+                saveUserData();
+                showNotification('🔓 Base destrancada!');
+            } else {
+                // Lock base (costs money)
+                const cost = gameState.lockCost || 5000;
+                if (gameState.money >= cost) {
+                    gameState.money -= cost;
+                    gameState.totalSpent = (gameState.totalSpent || 0) + cost;
+                    gameState.baseLocked = true;
+                    gameState.lockEndTime = Date.now() + (gameState.lockDuration * 1000);
+                    gameState.lockCost = Math.floor(cost * 1.2); // Increase cost each time
+                    gameState.timesLocked = (gameState.timesLocked || 0) + 1;
+                    
+                    updateBaseLock();
+                    updateUI();
+                    saveUserData();
+                    showNotification('🔒 Base trancada por 5 minutos!');
+                } else {
+                    showNotification('❌ Dinheiro insuficiente para trancar a base!');
+                }
+            }
+        }
+
+        function updateBaseLock() {
+            const lockStatus = document.getElementById('lockStatus');
+            const lockButton = document.getElementById('lockButton');
+            const baseContainer = document.getElementById('baseContainer');
+            const lockCostSpan = document.getElementById('lockCost');
+            
+            // Update lock cost display
+            if (lockCostSpan) {
+                lockCostSpan.textContent = gameState.lockCost || 5000;
+            }
+            
+            if (gameState.baseLocked) {
+                const timeLeft = Math.max(0, gameState.lockEndTime - Date.now());
+                
+                if (timeLeft > 0) {
+                    const minutes = Math.floor(timeLeft / 60000);
+                    const seconds = Math.floor((timeLeft % 60000) / 1000);
+                    
+                    lockStatus.innerHTML = `<span style="color: #ffd700;">🔒 TRANCADA (${minutes}:${seconds.toString().padStart(2, '0')})</span>`;
+                    lockButton.innerHTML = '🔓 Destrancar (GRÁTIS)';
+                    baseContainer.classList.add('base-locked');
+                } else {
+                    // Lock expired
+                    gameState.baseLocked = false;
+                    gameState.lockEndTime = 0;
+                    saveUserData();
                 }
             }
             
-            // Get random character of selected rarity
-            const charactersOfRarity = characterList.filter(name => 
-                characterDatabase[name].rarity === selectedRarity
-            );
-            
-            if (charactersOfRarity.length === 0) {
-                showNotification('❌ Erro no crate!', 'failure');
-                return;
+            if (!gameState.baseLocked) {
+                lockStatus.innerHTML = '';
+                lockButton.innerHTML = `🔒 Trancar Base (💰 <span id="lockCost">${gameState.lockCost || 5000}</span>)`;
+                baseContainer.classList.remove('base-locked');
             }
+        }
+
+        // Tab System
+        function switchGameTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             
-            const randomChar = charactersOfRarity[Math.floor(Math.random() * charactersOfRarity.length)];
+            event.target.classList.add('active');
+            document.getElementById(`${tab}-content`).classList.add('active');
             
-            if (gameState.inventory[randomChar]) {
-                gameState.inventory[randomChar]++;
-            } else {
-                gameState.inventory[randomChar] = 1;
+            if (tab === 'auctions') {
+                loadAuctions();
+            } else if (tab === 'diplomacy') {
+                updateDiplomacy();
+            } else if (tab === 'trades') {
+                updateTradesList();
+            } else if (tab === 'base') {
+                updateBase();
+                updateBaseLock();
+            } else if (tab === 'stats') {
+                updateDetailedStats();
             }
-            
-            calculateIncome();
-            updateInventoryDisplay();
-            updateDisplay();
-            savePlayerData();
-            
-            const rarityEmojis = {
-                'comum': '⚪',
-                'incomum': '🟢',
-                'raro': '🔵',
-                'epico': '🟣',
-                'lendario': '🟠',
-                'mitico': '🔴',
-                'prismatico': '🌈'
+        }
+
+        function exportStats() {
+            const stats = {
+                username: gameState.username,
+                money: gameState.money,
+                income: gameState.income,
+                totalEarned: gameState.totalEarned || 0,
+                totalSpent: gameState.totalSpent || 0,
+                charactersOwned: Object.values(gameState.inventory).reduce((sum, count) => sum + count, 0),
+                uniqueTypes: Object.keys(gameState.inventory).length,
+                attacksWon: gameState.attacksWon || 0,
+                attacksLost: gameState.attacksLost || 0,
+                tradesCompleted: gameState.tradesCompleted || 0,
+                auctionsWon: gameState.auctionsWon || 0,
+                playTime: Math.floor((gameState.playTime || 0) / 60),
+                rebirthPoints: gameState.rebirthPoints,
+                baseSlots: gameState.baseSlots,
+                exportDate: new Date().toLocaleString('pt-BR')
             };
             
-            showNotification(`🎁 Crate aberto! ${rarityEmojis[selectedRarity]} ${randomChar}!`, 'success');
+            const dataStr = JSON.stringify(stats, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${gameState.username}_stats.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            showNotification('📤 Estatísticas exportadas!');
         }
 
-        function calculateIncome() {
-            gameState.income = 0;
-            
-            Object.entries(gameState.inventory).forEach(([charName, count]) => {
-                const char = characterDatabase[charName];
-                if (char) {
-                    gameState.income += char.income * count;
-                }
-            });
+        function resetStats() {
+            if (confirm('⚠️ Tem certeza que deseja resetar TODAS as estatísticas? Esta ação não pode ser desfeita!')) {
+                gameState.totalEarned = 0;
+                gameState.totalSpent = 0;
+                gameState.attacksWon = 0;
+                gameState.attacksLost = 0;
+                gameState.tradesCompleted = 0;
+                gameState.auctionsWon = 0;
+                gameState.playTime = 0;
+                gameState.timesLocked = 0;
+                gameState.baseUpgrades = 0;
+                gameState.itemsStolen = 0;
+                
+                updateUI();
+                saveUserData();
+                showNotification('🗑️ Estatísticas resetadas!');
+            }
         }
 
-        function updateDisplay() {
-            document.getElementById('money').textContent = Math.floor(gameState.money).toLocaleString();
-            document.getElementById('income').textContent = gameState.income.toLocaleString();
-            document.getElementById('totalItems').textContent = Object.keys(gameState.inventory).length;
+        function updateDiplomacy() {
+            const container = document.getElementById('diplomacyList');
+            container.innerHTML = '';
             
-            let totalValue = 0;
-            Object.entries(gameState.inventory).forEach(([charName, count]) => {
-                const char = characterDatabase[charName];
-                if (char) {
-                    totalValue += char.income * count * 15;
-                }
-            });
-            document.getElementById('totalValue').textContent = totalValue.toLocaleString();
-        }
-
-        function updateInventoryDisplay() {
-            const grid = document.getElementById('inventoryGrid');
-            
-            if (Object.keys(gameState.inventory).length === 0) {
-                grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: rgba(255, 255, 255, 0.7); padding: 24px; font-size: 1rem;">Inventário vazio. Compre crates ou colete da esteira!</div>';
+            if (gameState.players.length <= 1) {
+                container.innerHTML = '<p>Nenhum outro jogador online.</p>';
                 return;
             }
             
-            const sortedItems = Object.entries(gameState.inventory).sort(([a], [b]) => {
-                const rarityOrder = { 'prismatico': 7, 'mitico': 6, 'lendario': 5, 'epico': 4, 'raro': 3, 'incomum': 2, 'comum': 1 };
-                return rarityOrder[characterDatabase[b].rarity] - rarityOrder[characterDatabase[a].rarity];
-            });
-            
-            grid.innerHTML = sortedItems.map(([charName, count]) => {
-                const char = characterDatabase[charName];
-                const isSelected = gameState.selectedItems.includes(charName);
+            gameState.players.forEach(player => {
+                if (player.username === gameState.username) return;
                 
-                return `
-                    <div class="inventory-item ${char.rarity} ${isSelected ? 'selected' : ''}" 
-                         onclick="selectItem('${charName}')">
-                        <div class="item-name">${charName}</div>
-                        <div class="item-income">+$${char.income}/seg</div>
-                        ${count > 1 ? `<div class="item-count">${count}</div>` : ''}
+                const relation = gameState.diplomacy[player.username] || 'paz';
+                const playerElement = document.createElement('div');
+                playerElement.className = 'player-item';
+                playerElement.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${player.username}</strong>
+                            <span class="diplomacy-status status-${relation}">${relation.toUpperCase()}</span>
+                        </div>
+                        <div>
+                            <button class="btn" onclick="changeDiplomacy('${player.username}', 'paz')">🕊️</button>
+                            <button class="btn" onclick="changeDiplomacy('${player.username}', 'tensao')">⚠️</button>
+                            <button class="btn" onclick="changeDiplomacy('${player.username}', 'embargo')">🚫</button>
+                            <button class="btn" onclick="changeDiplomacy('${player.username}', 'guerra')">⚔️</button>
+                            ${relation === 'guerra' ? `<button class="btn" onclick="attackPlayer('${player.username}')">💥 Atacar</button>` : ''}
+                        </div>
                     </div>
                 `;
-            }).join('');
-        }
-
-        function updatePlayersDisplay() {
-            const playersList = document.getElementById('playersList');
+                container.appendChild(playerElement);
+            });
             
-            playersList.innerHTML = `
-                <div style="text-align: center; color: #00ff88; padding: 24px; font-size: 1rem;">
-                    🎮 Você está jogando!<br>
-                    <strong>Código da sala: ${gameState.roomCode}</strong><br>
-                    <span style="color: rgba(255, 255, 255, 0.7);">Aguardando outros jogadores...</span>
-                </div>
-            `;
+            // Check for world war
+            checkWorldWar();
         }
 
-        function selectItem(characterName) {
-            const index = gameState.selectedItems.indexOf(characterName);
-            if (index > -1) {
-                gameState.selectedItems.splice(index, 1);
-            } else {
-                if (gameState.selectedItems.length >= 3) {
-                    showNotification('⚠️ Máximo 3 itens por troca!', 'warning');
-                    return;
-                }
-                gameState.selectedItems.push(characterName);
+        function changeDiplomacy(targetPlayer, newStatus) {
+            const oldStatus = gameState.diplomacy[targetPlayer] || 'paz';
+            gameState.diplomacy[targetPlayer] = newStatus;
+            
+            if (socket) {
+                socket.emit('diplomacyChange', {
+                    roomCode: gameState.currentRoom,
+                    from: gameState.username,
+                    to: targetPlayer,
+                    status: newStatus
+                });
             }
             
-            updateInventoryDisplay();
-            updateSelectedItemsDisplay();
+            updateDiplomacy();
+            saveUserData();
+            showNotification(`🏛️ Relação com ${targetPlayer}: ${newStatus.toUpperCase()}`);
         }
 
-        function updateSelectedItemsDisplay() {
-            const selectedList = document.getElementById('selectedItemsList');
-            
-            if (gameState.selectedItems.length === 0) {
-                selectedList.textContent = 'Nenhum item selecionado';
-                document.getElementById('tradeBotBtn').disabled = true;
-            } else {
-                selectedList.textContent = gameState.selectedItems.join(', ');
-                document.getElementById('tradeBotBtn').disabled = false;
+        function checkWorldWar() {
+            const warCount = Object.values(gameState.diplomacy).filter(status => status === 'guerra').length;
+            if (warCount >= 3) {
+                // Update all war statuses to world war
+                Object.keys(gameState.diplomacy).forEach(player => {
+                    if (gameState.diplomacy[player] === 'guerra') {
+                        gameState.diplomacy[player] = 'guerra-mundial';
+                    }
+                });
+                showNotification('🌍 GUERRA MUNDIAL DECLARADA!');
             }
         }
 
-        function tradeWithBot() {
-            if (gameState.selectedItems.length === 0) {
-                showNotification('⚠️ Selecione itens para trocar!', 'warning');
+        function attackPlayer(targetPlayer) {
+            const relation = gameState.diplomacy[targetPlayer];
+            if (relation !== 'guerra' && relation !== 'guerra-mundial') {
+                showNotification('❌ Só pode atacar em guerra!');
                 return;
             }
             
-            // Calculate trade value
-            let tradeValue = 0;
-            gameState.selectedItems.forEach(charName => {
-                const char = characterDatabase[charName];
-                tradeValue += char.income * 12;
+            // Check if target base is locked
+            const targetPlayerData = gameState.players.find(p => p.username === targetPlayer);
+            if (targetPlayerData && targetPlayerData.baseLocked) {
+                showNotification('🔒 Base do jogador está trancada! Não é possível atacar!');
+                return;
+            }
+            
+            // Simulate attack - steal random items
+            if (!targetPlayerData || !targetPlayerData.inventory) {
+                showNotification('❌ Jogador não encontrado!');
+                return;
+            }
+            
+            const targetItems = Object.keys(targetPlayerData.inventory);
+            if (targetItems.length === 0) {
+                showNotification('💥 Ataque realizado, mas o jogador não tinha itens!');
+                return;
+            }
+            
+            // Steal random item
+            const randomItem = targetItems[Math.floor(Math.random() * targetItems.length)];
+            if (gameState.inventory[randomItem]) {
+                gameState.inventory[randomItem]++;
+            } else {
+                gameState.inventory[randomItem] = 1;
+            }
+            
+            if (socket) {
+                socket.emit('playerAttack', {
+                    roomCode: gameState.currentRoom,
+                    attacker: gameState.username,
+                    target: targetPlayer,
+                    stolenItem: randomItem
+                });
+            }
+            
+            updateUI();
+            saveUserData();
+            showNotification(`💥 Atacou ${targetPlayer} e roubou ${randomItem}!`);
+        }
+
+        function updateTradesList() {
+            const container = document.getElementById('tradePlayersList');
+            container.innerHTML = '';
+            
+            if (gameState.players.length <= 1) {
+                container.innerHTML = '<p>Nenhum outro jogador online para trocar.</p>';
+                return;
+            }
+            
+            gameState.players.forEach(player => {
+                if (player.username === gameState.username) return;
+                
+                const relation = gameState.diplomacy[player.username] || 'paz';
+                if (relation === 'guerra' || relation === 'guerra-mundial') {
+                    return; // Can't trade with enemies
+                }
+                
+                const playerElement = document.createElement('div');
+                playerElement.className = 'player-item';
+                playerElement.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${player.username}</strong>
+                            <div style="font-size: 12px; color: rgba(255,255,255,0.7);">
+                                💰 ${player.money || 0} | 👥 ${Object.keys(player.inventory || {}).length} itens
+                            </div>
+                        </div>
+                        <button class="btn" onclick="openTradeWith('${player.username}')">🤝 Trocar</button>
+                    </div>
+                `;
+                container.appendChild(playerElement);
+            });
+        }
+
+        function openTradeWith(targetPlayer) {
+            gameState.currentTrade = {
+                partner: targetPlayer,
+                myOffer: {},
+                partnerOffer: {},
+                status: 'negotiating'
+            };
+            
+            document.getElementById('tradePartnerName').textContent = targetPlayer;
+            updateTradeModal();
+            document.getElementById('tradeModal').style.display = 'block';
+        }
+
+        function updateTradeModal() {
+            const myItemsContainer = document.getElementById('yourTradeItems');
+            const partnerItemsContainer = document.getElementById('partnerTradeItems');
+            
+            // My items
+            myItemsContainer.innerHTML = '<h5>Selecione seus itens:</h5>';
+            Object.entries(gameState.inventory).forEach(([name, count]) => {
+                if (count > 0) {
+                    const offered = gameState.currentTrade.myOffer[name] || 0;
+                    const itemDiv = document.createElement('div');
+                    itemDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin: 5px 0; padding: 5px; background: rgba(255,255,255,0.1); border-radius: 5px;';
+                    itemDiv.innerHTML = `
+                        <span>${name} (${count})</span>
+                        <div>
+                            <button class="btn" onclick="adjustTradeOffer('${name}', -1)" ${offered <= 0 ? 'disabled' : ''}>-</button>
+                            <span style="margin: 0 10px;">${offered}</span>
+                            <button class="btn" onclick="adjustTradeOffer('${name}', 1)" ${offered >= count ? 'disabled' : ''}>+</button>
+                        </div>
+                    `;
+                    myItemsContainer.appendChild(itemDiv);
+                }
             });
             
-            // Bot offers random items of similar value
-            const botOffer = generateBotOffer(tradeValue);
-            
-            setTimeout(() => {
-                const accept = confirm(`🤖 Bot Next Gen oferece:\n${botOffer.items.join('\n')}\n\nAceitar troca?`);
-                
-                if (accept) {
-                    // Remove selected items
-                    gameState.selectedItems.forEach(charName => {
-                        gameState.inventory[charName]--;
-                        if (gameState.inventory[charName] <= 0) {
-                            delete gameState.inventory[charName];
-                        }
-                    });
-                    
-                    // Add bot items
-                    botOffer.items.forEach(charName => {
-                        if (gameState.inventory[charName]) {
-                            gameState.inventory[charName]++;
-                        } else {
-                            gameState.inventory[charName] = 1;
-                        }
-                    });
-                    
-                    showNotification('✅ Troca realizada com sucesso!', 'success');
-                } else {
-                    showNotification('❌ Troca cancelada!', 'info');
-                }
-                
-                gameState.selectedItems = [];
-                calculateIncome();
-                updateInventoryDisplay();
-                updateSelectedItemsDisplay();
-                updateDisplay();
-                savePlayerData();
-                
-            }, 2000);
+            // Partner items (simulated)
+            partnerItemsContainer.innerHTML = '<h5>Itens do parceiro:</h5><p style="color: rgba(255,255,255,0.7);">Aguardando resposta...</p>';
         }
 
-        function generateBotOffer(targetValue) {
-            const availableChars = characterList.filter(name => 
-                !gameState.selectedItems.includes(name)
-            );
-            
-            const offer = [];
-            let currentValue = 0;
-            
-            while (currentValue < targetValue * 0.85 && offer.length < 3) {
-                const randomChar = availableChars[Math.floor(Math.random() * availableChars.length)];
-                const char = characterDatabase[randomChar];
-                
-                if (!offer.includes(randomChar)) {
-                    offer.push(randomChar);
-                    currentValue += char.income * 12;
-                }
+        function adjustTradeOffer(itemName, change) {
+            if (!gameState.currentTrade.myOffer[itemName]) {
+                gameState.currentTrade.myOffer[itemName] = 0;
             }
             
-            return { items: offer, value: currentValue };
+            const newAmount = gameState.currentTrade.myOffer[itemName] + change;
+            const maxAmount = gameState.inventory[itemName] || 0;
+            
+            if (newAmount >= 0 && newAmount <= maxAmount) {
+                gameState.currentTrade.myOffer[itemName] = newAmount;
+                if (newAmount === 0) {
+                    delete gameState.currentTrade.myOffer[itemName];
+                }
+                updateTradeModal();
+            }
         }
 
-        function attackRandomPlayer() {
-            const commonItems = characterList.filter(name => 
-                characterDatabase[name].rarity === 'comum' || 
-                characterDatabase[name].rarity === 'incomum'
-            );
-            const stolenItem = commonItems[Math.floor(Math.random() * commonItems.length)];
+        function confirmTrade() {
+            if (Object.keys(gameState.currentTrade.myOffer).length === 0) {
+                showNotification('❌ Selecione pelo menos um item para trocar!');
+                return;
+            }
             
-            if (Math.random() <= 0.45) {
-                if (gameState.inventory[stolenItem]) {
-                    gameState.inventory[stolenItem]++;
-                } else {
-                    gameState.inventory[stolenItem] = 1;
+            if (socket) {
+                socket.emit('tradeOffer', {
+                    roomCode: gameState.currentRoom,
+                    from: gameState.username,
+                    to: gameState.currentTrade.partner,
+                    offer: gameState.currentTrade.myOffer
+                });
+            }
+            
+            showNotification('🤝 Proposta de troca enviada!');
+            closeModal('tradeModal');
+        }
+
+        function cancelTrade() {
+            gameState.currentTrade = null;
+            closeModal('tradeModal');
+        }
+
+        function openCreateAuction() {
+            const select = document.getElementById('auctionItemSelect');
+            select.innerHTML = '<option value="">Selecione um item...</option>';
+            
+            Object.entries(gameState.inventory).forEach(([name, count]) => {
+                if (count > 0) {
+                    select.innerHTML += `<option value="${name}">${name} (${count}x)</option>`;
                 }
+            });
+            
+            document.getElementById('createAuctionModal').style.display = 'block';
+        }
+
+        function createAuction() {
+            const itemName = document.getElementById('auctionItemSelect').value;
+            const startPrice = parseInt(document.getElementById('auctionStartPrice').value);
+            const duration = parseInt(document.getElementById('auctionDuration').value);
+            
+            if (!itemName || !startPrice || !duration) {
+                showNotification('❌ Preencha todos os campos!');
+                return;
+            }
+            
+            if (!gameState.inventory[itemName] || gameState.inventory[itemName] < 1) {
+                showNotification('❌ Você não possui este item!');
+                return;
+            }
+            
+            // Remove item from inventory
+            gameState.inventory[itemName]--;
+            if (gameState.inventory[itemName] === 0) {
+                delete gameState.inventory[itemName];
+            }
+            
+            const auction = {
+                id: Date.now(),
+                seller: gameState.username,
+                item: itemName,
+                startPrice: startPrice,
+                currentBid: startPrice,
+                highestBidder: null,
+                endTime: Date.now() + (duration * 60 * 1000),
+                bids: []
+            };
+            
+            if (socket) {
+                socket.emit('createAuction', {
+                    roomCode: gameState.currentRoom,
+                    auction: auction
+                });
+            }
+            
+            updateUI();
+            saveUserData();
+            closeModal('createAuctionModal');
+            showNotification('🔨 Leilão criado com sucesso!');
+        }
+
+        function loadAuctions() {
+            if (socket) {
+                socket.emit('getAuctions', { roomCode: gameState.currentRoom });
+            }
+        }
+
+        function updateAuctions() {
+            const container = document.getElementById('auctionsList');
+            container.innerHTML = '';
+            
+            gameState.auctions.forEach(auction => {
+                const timeLeft = Math.max(0, auction.endTime - Date.now());
+                const minutes = Math.floor(timeLeft / 60000);
+                const seconds = Math.floor((timeLeft % 60000) / 1000);
                 
-                calculateIncome();
-                updateInventoryDisplay();
-                updateDisplay();
-                savePlayerData();
+                if (timeLeft > 0) {
+                    const auctionElement = document.createElement('div');
+                    auctionElement.className = 'auction-item';
+                    auctionElement.innerHTML = `
+                        <div>
+                            <strong>${auction.item}</strong> - Vendedor: ${auction.seller}
+                        </div>
+                        <div>Lance atual: 💰 ${auction.currentBid}</div>
+                        <div>Maior lance: ${auction.highestBidder || 'Nenhum'}</div>
+                        <div>Tempo restante: ${minutes}:${seconds.toString().padStart(2, '0')}</div>
+                        ${auction.seller !== gameState.username ? `
+                            <div class="bid-section">
+                                <input type="number" class="bid-input" id="bid-${auction.id}" placeholder="Seu lance..." min="${auction.currentBid + 1}">
+                                <button class="btn" onclick="placeBid('${auction.id}')">💰 Dar Lance</button>
+                            </div>
+                        ` : '<div style="color: #f39c12;">Seu leilão</div>'}
+                    `;
+                    container.appendChild(auctionElement);
+                }
+            });
+            
+            if (gameState.auctions.length === 0) {
+                container.innerHTML = '<p>Nenhum leilão ativo no momento.</p>';
+            }
+        }
+
+        function placeBid(auctionId) {
+            const bidInput = document.getElementById(`bid-${auctionId}`);
+            const bidAmount = parseInt(bidInput.value);
+            const auction = gameState.auctions.find(a => a.id == auctionId);
+            
+            if (!auction) {
+                showNotification('❌ Leilão não encontrado!');
+                return;
+            }
+            
+            if (bidAmount <= auction.currentBid) {
+                showNotification('❌ Lance deve ser maior que o atual!');
+                return;
+            }
+            
+            if (gameState.money < bidAmount) {
+                showNotification('❌ Dinheiro insuficiente!');
+                return;
+            }
+            
+            if (socket) {
+                socket.emit('placeBid', {
+                    roomCode: gameState.currentRoom,
+                    auctionId: auctionId,
+                    bidder: gameState.username,
+                    amount: bidAmount
+                });
+            }
+            
+            bidInput.value = '';
+        }
+
+        // UI Updates
+        function updateUI() {
+            document.getElementById('money').textContent = `💰 ${Math.floor(gameState.money)}`;
+            document.getElementById('income').textContent = `💸 ${gameState.income}/s`;
+            
+            const totalChars = Object.values(gameState.inventory).reduce((sum, count) => sum + count, 0);
+            document.getElementById('totalCharacters').textContent = `👥 ${totalChars}`;
+            document.getElementById('rebirthPoints').textContent = `⭐ ${gameState.rebirthPoints}`;
+            
+            // Update new stats
+            document.getElementById('totalEarned').textContent = `📈 ${Math.floor(gameState.totalEarned || 0)}`;
+            
+            const playTimeMinutes = Math.floor((gameState.playTime || 0) / 60);
+            document.getElementById('playTime').textContent = `⏰ ${playTimeMinutes}m`;
+            
+            // Update base info
+            document.getElementById('baseSlotCount').textContent = gameState.baseSlots;
+            document.getElementById('baseUpgradeCost').textContent = gameState.baseUpgradeCost;
+            document.getElementById('protectionCost').textContent = gameState.protectionCost;
+            
+            updateInventory();
+            updateDetailedStats();
+        }
+
+        function updateDetailedStats() {
+            // Economia
+            document.getElementById('statTotalEarned').textContent = Math.floor(gameState.totalEarned || 0);
+            document.getElementById('statTotalSpent').textContent = Math.floor(gameState.totalSpent || 0);
+            document.getElementById('statNetProfit').textContent = Math.floor((gameState.totalEarned || 0) - (gameState.totalSpent || 0));
+            document.getElementById('statCurrentIncome').textContent = gameState.income;
+            
+            // Personagens
+            const totalChars = Object.values(gameState.inventory).reduce((sum, count) => sum + count, 0);
+            const uniqueTypes = Object.keys(gameState.inventory).length;
+            const collectionPercent = Math.floor((uniqueTypes / Object.keys(characterDatabase).length) * 100);
+            
+            document.getElementById('statCharactersOwned').textContent = totalChars;
+            document.getElementById('statUniqueTypes').textContent = uniqueTypes;
+            document.getElementById('statCollectionPercent').textContent = collectionPercent;
+            
+            // Encontrar personagem mais valioso
+            let mostValuable = '-';
+            let highestIncome = 0;
+            Object.keys(gameState.inventory).forEach(char => {
+                if (characterDatabase[char] && characterDatabase[char].income > highestIncome) {
+                    highestIncome = characterDatabase[char].income;
+                    mostValuable = char;
+                }
+            });
+            document.getElementById('statMostValuable').textContent = mostValuable;
+            
+            // Combate
+            document.getElementById('statAttacksWon').textContent = gameState.attacksWon || 0;
+            document.getElementById('statAttacksLost').textContent = gameState.attacksLost || 0;
+            const totalAttacks = (gameState.attacksWon || 0) + (gameState.attacksLost || 0);
+            const winRate = totalAttacks > 0 ? Math.floor(((gameState.attacksWon || 0) / totalAttacks) * 100) : 0;
+            document.getElementById('statWinRate').textContent = winRate;
+            document.getElementById('statItemsStolen').textContent = gameState.itemsStolen || 0;
+            
+            // Social
+            document.getElementById('statTradesCompleted').textContent = gameState.tradesCompleted || 0;
+            document.getElementById('statAuctionsWon').textContent = gameState.auctionsWon || 0;
+            document.getElementById('statDiplomaticRelations').textContent = Object.keys(gameState.diplomacy).length;
+            
+            // Reputação baseada em estatísticas
+            let reputation = 'Neutro';
+            if (winRate > 70) reputation = 'Conquistador';
+            else if ((gameState.tradesCompleted || 0) > 10) reputation = 'Comerciante';
+            else if (collectionPercent > 50) reputation = 'Colecionador';
+            else if ((gameState.totalEarned || 0) > 100000) reputation = 'Magnata';
+            document.getElementById('statReputation').textContent = reputation;
+            
+            // Base
+            document.getElementById('statBaseSlots').textContent = gameState.baseSlots;
+            document.getElementById('statProtectionTime').textContent = gameState.protectionTime;
+            document.getElementById('statTimesLocked').textContent = gameState.timesLocked || 0;
+            document.getElementById('statBaseUpgrades').textContent = gameState.baseUpgrades || 0;
+            
+            // Tempo
+            const totalMinutes = Math.floor((gameState.playTime || 0) / 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            document.getElementById('statTotalPlayTime').textContent = `${hours}h ${minutes}m`;
+            
+            const sessionTime = gameState.sessionStartTime ? Math.floor((Date.now() - gameState.sessionStartTime) / 60000) : 0;
+            document.getElementById('statSessionTime').textContent = `${sessionTime}m`;
+            
+            if (gameState.lastLogin) {
+                const lastLogin = new Date(gameState.lastLogin).toLocaleDateString('pt-BR');
+                document.getElementById('statLastLogin').textContent = lastLogin;
+            }
+            
+            const userData = localStorage.getItem(`user_${gameState.username}`);
+            if (userData) {
+                const user = JSON.parse(userData);
+                if (user.createdAt) {
+                    const accountAge = Math.floor((Date.now() - user.createdAt) / (1000 * 60 * 60 * 24));
+                    document.getElementById('statAccountAge').textContent = `${accountAge} dias`;
+                }
+            }
+        }
+
+        function updateInventory() {
+            const container = document.getElementById('inventoryList');
+            container.innerHTML = '';
+            
+            Object.entries(gameState.inventory).forEach(([name, count]) => {
+                const item = document.createElement('div');
+                item.className = 'inventory-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${name}</strong><br>
+                        <small>Qtd: ${count}</small>
+                    </div>
+                    <div>💸 ${characterDatabase[name].income}/s</div>
+                `;
+                container.appendChild(item);
+            });
+            
+            if (Object.keys(gameState.inventory).length === 0) {
+                container.innerHTML = '<p>Inventário vazio</p>';
+            }
+        }
+
+        function updatePlayersList() {
+            const container = document.getElementById('playersOnline');
+            const countElement = document.getElementById('playerCount');
+            
+            container.innerHTML = '';
+            countElement.textContent = gameState.players.length;
+            
+            gameState.players.forEach(player => {
+                if (player.username === gameState.username) return;
                 
-                showNotification(`⚔️ Roubou ${stolenItem} de um bot!`, 'success');
+                const relation = gameState.diplomacy[player.username] || 'paz';
+                const playerElement = document.createElement('div');
+                playerElement.className = 'player-card';
+                playerElement.innerHTML = `
+                    <div>
+                        <strong>${player.username}</strong>
+                        <span class="diplomacy-status status-${relation}">${relation}</span>
+                        ${player.baseLocked ? '<span style="color: #ffd700;">🔒</span>' : ''}
+                    </div>
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.7);">
+                        💰 ${player.money || 0} | 💸 ${player.income || 0}/s
+                    </div>
+                `;
+                playerElement.onclick = () => openPlayerModal(player);
+                container.appendChild(playerElement);
+            });
+        }
+
+        function openPlayerModal(player) {
+            document.getElementById('modalPlayerName').textContent = player.username;
+            document.getElementById('modalPlayerInfo').innerHTML = `
+                <p>💰 Dinheiro: ${player.money || 0}</p>
+                <p>💸 Renda: ${player.income || 0}/s</p>
+                <p>👥 Personagens: ${Object.keys(player.inventory || {}).length}</p>
+                <p>🏛️ Status: ${gameState.diplomacy[player.username] || 'paz'}</p>
+                <p>🔒 Base: ${player.baseLocked ? 'Trancada' : 'Destrancada'}</p>
+            `;
+            document.getElementById('playerModal').style.display = 'block';
+        }
+
+        // Base Functions
+        function upgradeBase() {
+            if (gameState.money >= 1000) {
+                gameState.money -= 1000;
+                gameState.baseSlots += 2;
+                updateUI();
+                showNotification('🏰 Base melhorada!');
             } else {
-                showNotification(`❌ Falhou ao atacar o bot!`, 'failure');
+                showNotification('❌ Dinheiro insuficiente!');
             }
         }
 
-        function collectFromBelt() {
-            showNotification('💡 Clique em um item na esteira para comprar!', 'info');
+        function performRebirth() {
+            if (gameState.money >= 10000) {
+                gameState.rebirthPoints++;
+                gameState.money = 100;
+                gameState.income = 0;
+                gameState.inventory = {};
+                gameState.baseLocked = false;
+                gameState.lockEndTime = 0;
+                updateUI();
+                updateBaseLock();
+                showNotification('⭐ Rebirth realizado!');
+            } else {
+                showNotification('❌ Precisa de 💰 10.000 para rebirth!');
+            }
         }
 
-        function startGameLoops() {
-            // Income loop
-            setInterval(() => {
-                gameState.money += gameState.income;
-                updateDisplay();
-            }, 1000);
-            
-            // Auto-save loop
-            setInterval(() => {
-                savePlayerData();
-            }, 15000);
-            
-            // Belt refresh loop
-            setInterval(() => {
-                // Só gerar nova esteira se não estiver em multiplayer
-                if (!gameState.isOnline || !multiplayerClient || !multiplayerClient.isConnected) {
-                    // Limpar itens vendidos da esteira anterior
-                    const keys = Object.keys(localStorage);
-                    keys.forEach(key => {
-                        if (key.startsWith(`sold_nextgen_${gameState.roomCode}_`)) {
-                            localStorage.removeItem(key);
-                        }
-                    });
-                    
-                    currentBeltData = generateNewBelt();
-                    updateBeltDisplay(currentBeltData);
-                    showNotification('🔄 Nova esteira carregada!', 'info');
-                }
-                // Em multiplayer, o servidor controla a esteira
-            }, 90000);
+        // Modal Functions
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
         }
 
-        function showNotification(message, type) {
+        function createAuctionFinal() {
+            createAuction();
+        }
+
+        // Utility Functions
+        function showNotification(message) {
             const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
+            notification.className = 'notification';
             notification.textContent = message;
             document.body.appendChild(notification);
             
             setTimeout(() => {
                 notification.remove();
-            }, 5000);
+            }, 3000);
         }
 
-        // Cleanup on page unload
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Auto-save every 30 seconds
+        setInterval(() => {
+            if (gameState.username) {
+                saveUserData();
+            }
+        }, 30000);
+
+        // Save on page unload
         window.addEventListener('beforeunload', () => {
-            savePlayerData();
-            console.log('💾 Dados Next Gen salvos antes de sair');
+            if (gameState.username) {
+                saveUserData();
+            }
         });
 
-        // Performance optimization
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Character Tycoon Next Gen carregado!');
+        // Initialize
+        window.addEventListener('load', () => {
+            console.log('🎮 Character Tycoon carregado!');
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97b1f375e2511b11',t:'MTc1NzIwMzQ5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97b977751007034f',t:'MTc1NzI4MjI5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 
 
