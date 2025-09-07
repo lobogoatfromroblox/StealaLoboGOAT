@@ -1,0 +1,2118 @@
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="multiplayer.js"></script>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Tycoon 2024 - Next Gen Edition</title>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a0f2e 30%, #2d1b69 70%, #4a148c 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(20px);
+        }
+
+        .login-form {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 50px;
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            text-align: center;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 
+                0 32px 64px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            animation: loginFadeIn 1s ease-out;
+        }
+
+        @keyframes loginFadeIn {
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .login-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #00f5ff 0%, #ff00ff 50%, #ffff00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 40px rgba(0, 245, 255, 0.3);
+            letter-spacing: -1px;
+        }
+
+        .login-subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 35px;
+            font-weight: 400;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 18px 24px;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #00f5ff;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.1), 0 0 32px rgba(0, 245, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .login-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 400;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            margin: 25px 0;
+            background: linear-gradient(135deg, #00f5ff 0%, #0099ff 100%);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px rgba(0, 153, 255, 0.3);
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0, 153, 255, 0.4);
+        }
+
+        .login-btn:hover::before {
+            left: 100%;
+        }
+
+        .version-badge {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 1000;
+            animation: badgeFloat 4s ease-in-out infinite;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes badgeFloat {
+            0%, 100% { transform: translateX(-50%) translateY(0px); }
+            50% { transform: translateX(-50%) translateY(-8px); }
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-areas: 
+                "header header header header"
+                "controls conveyor shop inventory"
+                "players conveyor shop inventory"
+                "trading bases bases bases";
+            grid-template-columns: 300px 1fr 340px 400px;
+            grid-template-rows: auto 1fr auto auto;
+            gap: 24px;
+            padding: 24px;
+            min-height: 100vh;
+            margin-top: 80px;
+        }
+
+        .header {
+            grid-area: header;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 32px;
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 24px 48px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .game-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #00f5ff 0%, #ff00ff 50%, #ffff00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 40px rgba(0, 245, 255, 0.3);
+            letter-spacing: -2px;
+        }
+
+        .player-info {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .money-display {
+            font-size: 2.8rem;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            font-weight: 800;
+            text-shadow: 0 0 32px rgba(0, 255, 136, 0.3);
+        }
+
+        .income-display {
+            font-size: 1.3rem;
+            color: #81ff9f;
+            font-weight: 600;
+            text-shadow: 0 0 20px rgba(129, 255, 159, 0.3);
+        }
+
+        .controls, .inventory-area, .shop-area, .players-area, .trading-area, .bases-area {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 24px;
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 24px 48px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .controls {
+            grid-area: controls;
+        }
+
+        .conveyor-belt {
+            grid-area: conveyor;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 24px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 
+                0 24px 48px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .shop-area {
+            grid-area: shop;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .inventory-area {
+            grid-area: inventory;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .players-area {
+            grid-area: players;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        .trading-area {
+            grid-area: trading;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .bases-area {
+            grid-area: bases;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        .belt-container {
+            height: 240px;
+            overflow: hidden;
+            position: relative;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                inset 0 8px 32px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .belt-items {
+            display: flex;
+            animation: beltMove 40s linear infinite;
+            height: 100%;
+            align-items: center;
+            gap: 32px;
+            padding: 0 32px;
+        }
+
+        @keyframes beltMove {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .belt-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 16px 24px;
+            border-radius: 20px;
+            white-space: nowrap;
+            font-size: 1rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 180px;
+            text-align: center;
+            position: relative;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .belt-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.08) translateY(-8px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .belt-item.sold-out {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(255, 69, 58, 0.2);
+            border: 1px solid #ff453a;
+            animation: soldPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes soldPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.3; }
+        }
+
+        .belt-item-price {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            box-shadow: 0 4px 16px rgba(0, 255, 136, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .belt-item.sold-out .belt-item-price {
+            background: linear-gradient(135deg, #ff453a 0%, #d70015 100%);
+            box-shadow: 0 4px 16px rgba(255, 69, 58, 0.3);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffff00 0%, #ff9500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            font-weight: 700;
+            text-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+        }
+
+        .action-button {
+            width: 100%;
+            padding: 16px;
+            margin: 12px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .action-button:hover::before {
+            left: 100%;
+        }
+
+        .collect-btn {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            color: white;
+        }
+
+        .attack-btn {
+            background: linear-gradient(135deg, #ff453a 0%, #d70015 100%);
+            color: white;
+        }
+
+        .shop-btn {
+            background: linear-gradient(135deg, #bf5af2 0%, #9f44d3 100%);
+            color: white;
+        }
+
+        .trade-btn {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6d00 100%);
+            color: white;
+        }
+
+        .action-button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-button:disabled {
+            background: linear-gradient(135deg, #666 0%, #555 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .inventory-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .inventory-item:hover {
+            transform: scale(1.05) translateY(-4px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .inventory-item.selected {
+            border-color: #00f5ff;
+            background: rgba(0, 245, 255, 0.15);
+            box-shadow: 0 0 32px rgba(0, 245, 255, 0.3);
+        }
+
+        .item-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            line-height: 1.2;
+        }
+
+        .item-income {
+            font-size: 0.7rem;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+
+        .item-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: linear-gradient(135deg, #ff453a 0%, #d70015 100%);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            box-shadow: 0 4px 16px rgba(255, 69, 58, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Rarities com efeitos modernos */
+        .comum { 
+            border-color: #8e8e93; 
+            background: rgba(142, 142, 147, 0.1);
+        }
+        .incomum { 
+            border-color: #00ff88; 
+            background: rgba(0, 255, 136, 0.15);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+        .raro { 
+            border-color: #007aff; 
+            background: rgba(0, 122, 255, 0.15);
+            box-shadow: 0 0 20px rgba(0, 122, 255, 0.2);
+        }
+        .epico { 
+            border-color: #bf5af2; 
+            background: rgba(191, 90, 242, 0.15);
+            box-shadow: 0 0 20px rgba(191, 90, 242, 0.2);
+        }
+        .lendario { 
+            border-color: #ff9500; 
+            background: rgba(255, 149, 0, 0.15);
+            box-shadow: 0 0 20px rgba(255, 149, 0, 0.2);
+        }
+        .mitico { 
+            border-color: #ff453a; 
+            background: rgba(255, 69, 58, 0.15);
+            box-shadow: 0 0 20px rgba(255, 69, 58, 0.2);
+        }
+        .prismatico { 
+            border: 2px solid #00f5ff;
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.2), rgba(255, 0, 255, 0.2));
+            animation: prismaticGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes prismaticGlow {
+            0% { 
+                box-shadow: 0 0 32px #00f5ff, 0 0 48px rgba(0, 245, 255, 0.3); 
+                transform: scale(1);
+            }
+            100% { 
+                box-shadow: 0 0 48px #ff00ff, 0 0 64px rgba(255, 0, 255, 0.3); 
+                transform: scale(1.02);
+            }
+        }
+
+        .crate-item {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .crate-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .crate-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-6px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .crate-item:hover::before {
+            left: 100%;
+        }
+
+        .crate-name {
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+        }
+
+        .crate-price {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            font-weight: 800;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .crate-description {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 16px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .player-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .player-name {
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffff00 0%, #ff9500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+        }
+
+        .player-stats {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 16px;
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        .online-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #00ff88;
+            border-radius: 50%;
+            margin-right: 12px;
+            animation: onlinePulse 2s infinite;
+            box-shadow: 0 0 16px rgba(0, 255, 136, 0.5);
+        }
+
+        @keyframes onlinePulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.3); }
+        }
+
+        .connection-status {
+            text-align: center;
+            padding: 16px;
+            margin: 16px 0;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .connection-status.connected {
+            background: rgba(0, 255, 136, 0.15);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .connection-status.connecting {
+            background: rgba(255, 149, 0, 0.15);
+            border: 1px solid #ff9500;
+            color: #ff9500;
+            animation: connectingPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes connectingPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .connection-status.error {
+            background: rgba(255, 69, 58, 0.15);
+            border: 1px solid #ff453a;
+            color: #ff453a;
+        }
+
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 32px;
+            padding: 20px 28px;
+            border-radius: 16px;
+            font-weight: 600;
+            z-index: 1000;
+            animation: slideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 360px;
+            font-size: 1.1rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .notification.success { 
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); 
+            color: white; 
+        }
+        .notification.failure { 
+            background: linear-gradient(135deg, #ff453a 0%, #d70015 100%); 
+            color: white; 
+        }
+        .notification.warning { 
+            background: linear-gradient(135deg, #ff9500 0%, #ff6d00 100%); 
+            color: white; 
+        }
+        .notification.info { 
+            background: linear-gradient(135deg, #007aff 0%, #0056cc 100%); 
+            color: white; 
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%) scale(0.9); opacity: 0; }
+            to { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 16px;
+            border-radius: 16px;
+            text-align: center;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-number {
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffff00 0%, #ff9500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 16px rgba(255, 255, 0, 0.3);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .features-list {
+            margin-top: 25px;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-weight: 500;
+        }
+
+        .feature-icon {
+            margin-right: 12px;
+            font-size: 1.2rem;
+        }
+
+        /* Scrollbar moderna */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
+        }
+
+        @media (max-width: 1600px) {
+            .game-container {
+                grid-template-areas: 
+                    "header"
+                    "controls"
+                    "conveyor"
+                    "shop"
+                    "inventory"
+                    "players"
+                    "trading"
+                    "bases";
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto auto auto auto auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .login-form {
+                padding: 32px 24px;
+                margin: 20px;
+            }
+            
+            .login-title {
+                font-size: 2.2rem;
+            }
+            
+            .game-title {
+                font-size: 2.5rem;
+            }
+            
+            .money-display {
+                font-size: 2.2rem;
+            }
+            
+            .player-info {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-screen" id="loginScreen">
+        <div class="login-form">
+            <h2 class="login-title">🚀 Character Tycoon</h2>
+            <p class="login-subtitle">Next Generation Edition 2024</p>
+            
+            <input type="text" class="login-input" id="playerName" placeholder="Seu nome (ex: João)" maxlength="15">
+            <input type="text" class="login-input" id="roomCode" placeholder="Código da Sala (ex: TURMA2024)" maxlength="20">
+            <button class="login-btn" onclick="joinGame()">🎮 ENTRAR NO JOGO</button>
+
+            <div class="features-list">
+                <div class="feature-item">
+                    <span class="feature-icon">✨</span>
+                    <span>Interface moderna e responsiva</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🎯</span>
+                    <span>Sistema de raridades aprimorado</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🔥</span>
+                    <span>Animações fluidas e efeitos visuais</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">⚡</span>
+                    <span>Performance otimizada</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🌐</span>
+                    <span>Pronto para multiplayer real</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="version-badge">
+        🔥 NEXT GEN 2024 - Ultra Modern Edition
+    </div>
+
+    <div class="game-container">
+        <div class="header">
+            <h1 class="game-title">🏰 Character Tycoon</h1>
+            <div class="player-info">
+                <span>👤 <span id="currentPlayer">-</span></span>
+                <span>🏠 Sala: <span id="currentRoom">-</span></span>
+                <span>👥 Online: <span id="onlineCount">1</span></span>
+            </div>
+            <div class="money-display">💰 $<span id="money">100</span></div>
+            <div class="income-display">📈 Renda: $<span id="income">0</span>/seg</div>
+        </div>
+
+        <div class="controls">
+            <h2 class="section-title">🎮 Central de Comando</h2>
+            
+            <div class="connection-status error" id="connectionStatus">
+                🔴 Modo Offline - Totalmente Funcional!
+            </div>
+            
+            <button class="action-button collect-btn" onclick="collectFromBelt()">
+                🎯 Coletar da Esteira
+            </button>
+            
+            <button class="action-button attack-btn" onclick="attackRandomPlayer()">
+                ⚔️ Atacar Bot Aleatório
+            </button>
+
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-number" id="playerLevel">1</div>
+                    <div class="stat-label">Nível</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="playerXP">0</div>
+                    <div class="stat-label">XP</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="totalItems">0</div>
+                    <div class="stat-label">Itens Únicos</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="totalValue">0</div>
+                    <div class="stat-label">Valor Total</div>
+                </div>
+            </div>
+            
+            <button class="action-button shop-btn" onclick="toggleAchievements()" style="margin-top: 16px;">
+                🏆 Conquistas (<span id="achievementCount">0</span>)
+            </button>
+        </div>
+
+        <div class="conveyor-belt">
+            <h2 class="section-title">🏭 Esteira Automática</h2>
+            <div class="belt-container">
+                <div class="belt-items" id="beltItems">
+                    <div style="color: rgba(255, 255, 255, 0.7); padding: 24px; font-size: 1.1rem;">Carregando esteira...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="shop-area">
+            <h2 class="section-title">🛒 Loja Premium</h2>
+            <div id="shopItems">
+                <div class="crate-item comum" onclick="buyCrate('basic')">
+                    <div class="crate-name">📦 Crate Básico</div>
+                    <div class="crate-price">$200</div>
+                    <div class="crate-description">Comum a Incomum<br>85% Comum • 15% Incomum</div>
+                </div>
+                
+                <div class="crate-item epico" onclick="buyCrate('premium')">
+                    <div class="crate-name">💎 Crate Premium</div>
+                    <div class="crate-price">$800</div>
+                    <div class="crate-description">Raro a Épico<br>60% Raro • 40% Épico</div>
+                </div>
+                
+                <div class="crate-item lendario" onclick="buyCrate('legendary')">
+                    <div class="crate-name">🌟 Crate Lendário</div>
+                    <div class="crate-price">$2500</div>
+                    <div class="crate-description">Épico a Lendário<br>70% Épico • 30% Lendário</div>
+                </div>
+                
+                <div class="crate-item prismatico" onclick="buyCrate('mythic')">
+                    <div class="crate-name">🔮 Crate Mítico</div>
+                    <div class="crate-price">$8000</div>
+                    <div class="crate-description">Lendário a Prismático<br>80% Lendário • 15% Mítico • 5% Prismático</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="inventory-area">
+            <h2 class="section-title">🎒 Inventário</h2>
+            <div class="inventory-grid" id="inventoryGrid">
+                <div style="grid-column: 1 / -1; text-align: center; color: rgba(255, 255, 255, 0.7); padding: 24px; font-size: 1rem;">
+                    Inventário vazio. Compre crates ou colete da esteira!
+                </div>
+            </div>
+        </div>
+
+        <div class="players-area">
+            <h2 class="section-title">👥 Jogadores Online</h2>
+            <div id="playersList">
+                <div style="text-align: center; color: #00ff88; padding: 24px; font-size: 1rem;">
+                    🎮 Você está jogando!<br>
+                    Aguardando outros jogadores...
+                </div>
+            </div>
+        </div>
+
+        <div class="trading-area">
+            <h2 class="section-title">🔄 Sistema de Trocas</h2>
+            
+            <div id="selectedItems" style="margin: 16px 0;">
+                <div style="font-size: 1rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 12px; font-weight: 500;">Itens selecionados:</div>
+                <div id="selectedItemsList" style="font-size: 0.9rem; color: #00f5ff; font-weight: 600;">Nenhum item selecionado</div>
+            </div>
+            
+            <button class="action-button trade-btn" onclick="tradeWithBot()" id="tradeBotBtn">
+                🤖 Trocar com Bot
+            </button>
+        </div>
+
+        <div class="bases-area">
+            <h2 class="section-title">🏠 Bases dos Jogadores</h2>
+            <div id="basesList">
+                <div style="text-align: center; color: rgba(255, 255, 255, 0.7); padding: 24px; font-size: 1rem;">
+                    Carregando bases...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        // Game State
+        let gameState = {
+            money: 100,
+            income: 0,
+            inventory: {},
+            selectedItems: [],
+            playerId: '',
+            playerName: '',
+            roomCode: '',
+            isOnline: false,
+            level: 1,
+            xp: 0,
+            achievements: [],
+            totalSpent: 0,
+            totalEarned: 0,
+            cratesOpened: 0,
+            attacksWon: 0,
+            tradesCompleted: 0,
+            prestige: 0,
+            multiplier: 1.0
+        };
+
+        let roomPlayers = {};
+        let gameListeners = [];
+        let multiplayerClient = null;
+        let currentBeltData = null;
+
+        // Character Database - Personagens originais
+        const characterDatabase = {
+            // Prismáticos (Ultra Raros)
+            "Lá grande Combinação": { rarity: 'prismatico', income: 500 },
+            "Los combinações": { rarity: 'prismatico', income: 450 },
+            "Lá suprema combinação": { rarity: 'prismatico', income: 600 },
+            
+            // Míticos
+            "Matteo": { rarity: 'mitico', income: 200 },
+            "Centralucci Nuclearucci": { rarity: 'mitico', income: 180 },
+            "Chef Crabracadabra": { rarity: 'mitico', income: 160 },
+            
+            // Lendários
+            "Bombardiro Cocodrilo": { rarity: 'lendario', income: 80 },
+            "Capuccino Asesino": { rarity: 'lendario', income: 75 },
+            "Glorbo Fruttodrillo": { rarity: 'lendario', income: 70 },
+            "Rhinodino Dildorino": { rarity: 'lendario', income: 65 },
+            
+            // Épicos
+            "Tung Tung Tung Sahur": { rarity: 'epico', income: 35 },
+            "Bailarina Cappuccina": { rarity: 'epico', income: 32 },
+            "Shpioniro Golubiro": { rarity: 'epico', income: 30 },
+            "La Vaca Saturno Saturnita": { rarity: 'epico', income: 28 },
+            "Bombardiere Lucertola": { rarity: 'epico', income: 25 },
+            
+            // Raros
+            "Chimpanzini Bananini": { rarity: 'raro', income: 18 },
+            "Bombombini Gusini": { rarity: 'raro', income: 16 },
+            "Boneca Ambalabu": { rarity: 'raro', income: 15 },
+            "Bobrito Bandito": { rarity: 'raro', income: 14 },
+            "Burbaloni Lulilolli": { rarity: 'raro', income: 12 },
+            
+            // Incomuns
+            "Tripi Tripo": { rarity: 'incomum', income: 8 },
+            "Brr Brr Patapim": { rarity: 'incomum', income: 7 },
+            "Frigo Camelo": { rarity: 'incomum', income: 6 },
+            "Blueberrinni Octopussini": { rarity: 'incomum', income: 5 },
+            
+            // Comuns
+            "Tralalero Tralala": { rarity: 'comum', income: 3 },
+            "Lirilì Larilà": { rarity: 'comum', income: 2 },
+            "Hipocactus": { rarity: 'comum', income: 2 },
+            "Trippi Troppi": { rarity: 'comum', income: 2 },
+            "Fruli Frula": { rarity: 'comum', income: 1 },
+            "Pot Hotspot": { rarity: 'comum', income: 1 },
+            "Brri Brri Bicus Dicus Bombicus": { rarity: 'comum', income: 1 },
+            "Talpa Di Ferro": { rarity: 'comum', income: 1 },
+            "Svinino Bombondino": { rarity: 'comum', income: 1 },
+            "Tric Trac Baraboom": { rarity: 'comum', income: 1 },
+            "Orangutini Ananasini": { rarity: 'comum', income: 1 },
+            "Espressona Señora": { rarity: 'comum', income: 1 },
+            "Zibra Zubra Zibralini": { rarity: 'comum', income: 1 },
+            "Graipussi Medussi": { rarity: 'comum', income: 1 },
+            "Tigrrullini Watermellini": { rarity: 'comum', income: 1 }
+        };
+
+        const characterList = Object.keys(characterDatabase);
+
+        const crateTypes = {
+            basic: {
+                price: 200,
+                rarities: [
+                    { rarity: 'comum', chance: 0.85 },
+                    { rarity: 'incomum', chance: 0.15 }
+                ]
+            },
+            premium: {
+                price: 800,
+                rarities: [
+                    { rarity: 'raro', chance: 0.60 },
+                    { rarity: 'epico', chance: 0.40 }
+                ]
+            },
+            legendary: {
+                price: 2500,
+                rarities: [
+                    { rarity: 'epico', chance: 0.70 },
+                    { rarity: 'lendario', chance: 0.30 }
+                ]
+            },
+            mythic: {
+                price: 8000,
+                rarities: [
+                    { rarity: 'lendario', chance: 0.80 },
+                    { rarity: 'mitico', chance: 0.15 },
+                    { rarity: 'prismatico', chance: 0.05 }
+                ]
+            }
+        };
+
+        // Multiplayer Client Class
+        class MultiplayerClient {
+            constructor() {
+                this.socket = null;
+                this.isConnected = false;
+                this.roomCode = '';
+                this.playerName = '';
+                this.connectionAttempts = 0;
+                this.maxAttempts = 3;
+            }
+
+            async connect(serverUrl = 'http://localhost:3000') {
+                return new Promise((resolve) => {
+                    console.log(`🔗 Tentando conectar ao servidor: ${serverUrl}`);
+                    updateConnectionStatus('connecting');
+                    
+                    // Timeout para conexão
+                    const connectionTimeout = setTimeout(() => {
+                        console.log('⏰ Timeout de conexão - usando modo offline');
+                        this.isConnected = false;
+                        updateConnectionStatus('error');
+                        resolve(false);
+                    }, 5000);
+
+                    try {
+                        this.socket = io(serverUrl, {
+                            timeout: 5000,
+                            transports: ['websocket', 'polling']
+                        });
+                        
+                        this.socket.on('connect', () => {
+                            clearTimeout(connectionTimeout);
+                            this.isConnected = true;
+                            this.connectionAttempts = 0;
+                            console.log('🔗 Conectado ao servidor multiplayer!');
+                            updateConnectionStatus('connected');
+                            resolve(true);
+                        });
+
+                        this.socket.on('disconnect', () => {
+                            this.isConnected = false;
+                            console.log('❌ Desconectado do servidor');
+                            updateConnectionStatus('error');
+                            showNotification('🔴 Conexão perdida - Modo offline ativo', 'warning');
+                        });
+
+                        this.socket.on('connect_error', (error) => {
+                            clearTimeout(connectionTimeout);
+                            console.log('❌ Erro de conexão:', error.message);
+                            this.connectionAttempts++;
+                            
+                            if (this.connectionAttempts >= this.maxAttempts) {
+                                console.log('🔄 Máximo de tentativas atingido - usando modo offline');
+                                updateConnectionStatus('error');
+                                resolve(false);
+                            }
+                        });
+
+                        this.socket.on('joinSuccess', (data) => {
+                            console.log('✅ Entrou na sala:', data);
+                            gameState.isOnline = true;
+                            document.getElementById('onlineCount').textContent = data.playerCount;
+                            showNotification(`🎮 Multiplayer ativo! ${data.playerCount} jogadores online`, 'success');
+                            
+                            // Sincronizar esteira se fornecida
+                            if (data.beltSeed) {
+                                currentBeltData = generateBeltFromSeed(data.beltSeed);
+                                updateBeltDisplay(currentBeltData);
+                            }
+                        });
+
+                        this.socket.on('playersUpdate', (players) => {
+                            updateMultiplayerPlayers(players);
+                            document.getElementById('onlineCount').textContent = players.length;
+                        });
+
+                        this.socket.on('beltUpdate', (data) => {
+                            console.log('🔄 Sincronizando esteira do servidor');
+                            currentBeltData = generateBeltFromSeed(data.seed);
+                            updateBeltDisplay(currentBeltData);
+                            showNotification('🔄 Esteira sincronizada!', 'info');
+                        });
+
+                        this.socket.on('itemSold', (data) => {
+                            markItemAsSold(data.itemName);
+                            if (data.buyerName !== this.playerName) {
+                                showNotification(`${data.buyerName} comprou ${data.itemName}!`, 'info');
+                            }
+                        });
+
+                        this.socket.on('attackResult', (data) => {
+                            if (data.success && data.attackerName !== this.playerName) {
+                                showNotification(`⚔️ ${data.attackerName} atacou com sucesso!`, 'warning');
+                            }
+                        });
+
+                        this.socket.on('tradeOffer', (data) => {
+                            if (data.fromName !== this.playerName) {
+                                showNotification(`💱 ${data.fromName} quer trocar!`, 'info');
+                            }
+                        });
+
+                    } catch (error) {
+                        clearTimeout(connectionTimeout);
+                        console.log('❌ Erro ao inicializar socket:', error);
+                        updateConnectionStatus('error');
+                        resolve(false);
+                    }
+                });
+            }
+
+            joinRoom(playerName, roomCode, playerData) {
+                if (!this.isConnected) return false;
+                
+                this.playerName = playerName;
+                this.roomCode = roomCode;
+                
+                this.socket.emit('joinRoom', {
+                    playerName,
+                    roomCode,
+                    playerData
+                });
+                
+                return true;
+            }
+
+            buyItem(itemName, price) {
+                if (!this.isConnected) return false;
+                
+                this.socket.emit('buyItem', { itemName, price });
+                return true;
+            }
+
+            updatePlayer(playerData) {
+                if (!this.isConnected) return;
+                
+                this.socket.emit('playerUpdate', playerData);
+            }
+
+            sendAttack(targetId, success, stolenItem) {
+                if (!this.isConnected) return;
+                
+                this.socket.emit('attack', { targetId, success, stolenItem });
+            }
+
+            sendTrade(targetId, offeredItems, requestedItems) {
+                if (!this.isConnected) return;
+                
+                this.socket.emit('trade', { targetId, offeredItems, requestedItems });
+            }
+        }
+
+        // Funções auxiliares do multiplayer
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connectionStatus');
+            
+            switch(status) {
+                case 'connected':
+                    statusElement.className = 'connection-status connected';
+                    statusElement.innerHTML = '🟢 Multiplayer Ativo - Sincronizado!';
+                    break;
+                case 'connecting':
+                    statusElement.className = 'connection-status connecting';
+                    statusElement.innerHTML = '🟡 Conectando ao servidor...';
+                    break;
+                case 'error':
+                default:
+                    statusElement.className = 'connection-status error';
+                    statusElement.innerHTML = '🔴 Modo Offline - Totalmente Funcional!';
+                    break;
+            }
+        }
+
+        function updateMultiplayerPlayers(players) {
+            const playersList = document.getElementById('playersList');
+            
+            if (!players || players.length <= 1) {
+                playersList.innerHTML = `
+                    <div style="text-align: center; color: #00ff88; padding: 24px; font-size: 1rem;">
+                        🎮 Você está jogando!<br>
+                        <strong>Código da sala: ${gameState.roomCode}</strong><br>
+                        <span style="color: rgba(255, 255, 255, 0.7);">Aguardando outros jogadores...</span>
+                    </div>
+                `;
+                return;
+            }
+
+            playersList.innerHTML = players.map(player => {
+                const isCurrentPlayer = player.name === gameState.playerName;
+                return `
+                    <div class="player-card ${isCurrentPlayer ? 'current-player' : ''}">
+                        <div class="player-name">
+                            ${isCurrentPlayer ? '👑 ' : ''}${player.name}
+                            <span class="online-indicator"></span>
+                        </div>
+                        <div class="player-stats">
+                            💰 $${(player.money || 0).toLocaleString()}<br>
+                            📈 $${(player.income || 0)}/seg<br>
+                            🎒 ${Object.keys(player.inventory || {}).length} itens únicos
+                        </div>
+                        ${!isCurrentPlayer ? `
+                            <button class="action-button attack-btn" onclick="attackPlayer('${player.socketId}', '${player.name}')" style="margin-top: 12px; padding: 8px 16px; font-size: 0.9rem;">
+                                ⚔️ Atacar
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function markItemAsSold(itemName) {
+            if (!currentBeltData) return;
+            
+            if (!currentBeltData.soldItems) {
+                currentBeltData.soldItems = [];
+            }
+            
+            if (!currentBeltData.soldItems.includes(itemName)) {
+                currentBeltData.soldItems.push(itemName);
+                updateBeltDisplay(currentBeltData);
+            }
+        }
+
+        function generateBeltFromSeed(seed) {
+            // Usar seed para gerar esteira determinística
+            console.log('🎲 Gerando esteira a partir do seed:', seed);
+            
+            // Implementar gerador pseudo-aleatório baseado em seed
+            let seedValue = seed;
+            function seededRandom() {
+                seedValue = (seedValue * 9301 + 49297) % 233280;
+                return seedValue / 233280;
+            }
+            
+            const beltCharacters = [];
+            const availableChars = [...characterList];
+            
+            // Embaralhar usando seed
+            for (let i = availableChars.length - 1; i > 0; i--) {
+                const j = Math.floor(seededRandom() * (i + 1));
+                [availableChars[i], availableChars[j]] = [availableChars[j], availableChars[i]];
+            }
+            
+            const targetItems = 10 + Math.floor(seededRandom() * 9);
+            
+            for (let i = 0; i < targetItems && i < availableChars.length; i++) {
+                beltCharacters.push(availableChars[i]);
+            }
+            
+            const beltItems = beltCharacters.map((charName, index) => {
+                const char = characterDatabase[charName];
+                const basePrice = char.income * (12 + Math.floor(seededRandom() * 8));
+                const variation = (seededRandom() - 0.5) * 0.6;
+                const price = Math.floor(basePrice * (1 + variation));
+                return {
+                    name: charName,
+                    rarity: char.rarity,
+                    income: char.income,
+                    price: Math.max(price, 1),
+                    id: `item_${seed}_${index}`
+                };
+            });
+            
+            return {
+                items: beltItems,
+                soldItems: [],
+                lastUpdate: Date.now(),
+                seed: seed
+            };
+        }
+
+        function attackPlayer(targetId, targetName) {
+            if (!multiplayerClient || !multiplayerClient.isConnected) {
+                showNotification('⚠️ Multiplayer não conectado!', 'warning');
+                return;
+            }
+            
+            const success = Math.random() <= 0.45;
+            let stolenItem = null;
+            
+            if (success) {
+                const commonItems = characterList.filter(name => 
+                    characterDatabase[name].rarity === 'comum' || 
+                    characterDatabase[name].rarity === 'incomum'
+                );
+                stolenItem = commonItems[Math.floor(Math.random() * commonItems.length)];
+                
+                if (gameState.inventory[stolenItem]) {
+                    gameState.inventory[stolenItem]++;
+                } else {
+                    gameState.inventory[stolenItem] = 1;
+                }
+                
+                calculateIncome();
+                updateInventoryDisplay();
+                updateDisplay();
+                savePlayerData();
+                
+                showNotification(`⚔️ Roubou ${stolenItem} de ${targetName}!`, 'success');
+            } else {
+                showNotification(`❌ Falhou ao atacar ${targetName}!`, 'failure');
+            }
+            
+            multiplayerClient.sendAttack(targetId, success, stolenItem);
+            
+            // Atualizar dados do jogador no servidor
+            multiplayerClient.updatePlayer({
+                money: gameState.money,
+                income: gameState.income,
+                inventory: gameState.inventory
+            });
+        }
+
+        // Login Function
+        async function joinGame() {
+            const playerName = document.getElementById('playerName').value.trim();
+            const roomCode = document.getElementById('roomCode').value.trim().toUpperCase();
+            
+            if (!playerName || !roomCode) {
+                showNotification('Preencha nome e código da sala!', 'failure');
+                return;
+            }
+            
+            if (playerName.length < 2) {
+                showNotification('Nome deve ter pelo menos 2 caracteres!', 'failure');
+                return;
+            }
+            
+            gameState.playerName = playerName;
+            gameState.roomCode = roomCode;
+            gameState.playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            document.getElementById('currentPlayer').textContent = playerName;
+            document.getElementById('currentRoom').textContent = roomCode;
+            document.getElementById('loginScreen').style.display = 'none';
+            
+            // Initialize game
+            await initializeGame();
+            
+            showNotification(`🎮 Bem-vindo ao futuro, ${playerName}! Sala: ${roomCode}`, 'success');
+        }
+
+        // Inicialização do Jogo
+        async function initializeGame() {
+            console.log('🚀 Inicializando Character Tycoon Next Gen...');
+            
+            // Tentar conectar multiplayer primeiro
+            multiplayerClient = new MultiplayerClient();
+            
+            // Tentar diferentes URLs de servidor
+            const serverUrls = [
+                'http://localhost:3000',
+                'https://character-tycoon-server.herokuapp.com',
+                'https://character-tycoon.railway.app'
+            ];
+            
+            let connected = false;
+            for (const url of serverUrls) {
+                try {
+                    connected = await multiplayerClient.connect(url);
+                    if (connected) {
+                        console.log(`✅ Conectado ao servidor: ${url}`);
+                        break;
+                    }
+                } catch (error) {
+                    console.log(`❌ Falha ao conectar: ${url}`);
+                }
+            }
+            
+            if (connected) {
+                // Tentar entrar na sala multiplayer
+                const joined = multiplayerClient.joinRoom(
+                    gameState.playerName, 
+                    gameState.roomCode, 
+                    {
+                        money: gameState.money,
+                        income: gameState.income,
+                        inventory: gameState.inventory
+                    }
+                );
+                
+                if (joined) {
+                    console.log('🎮 Modo multiplayer ativado!');
+                    gameState.isOnline = true;
+                } else {
+                    console.log('⚠️ Falha ao entrar na sala, usando modo offline');
+                    initializeOfflineGame();
+                }
+            } else {
+                console.log('🔄 Servidor não disponível, usando modo offline');
+                initializeOfflineGame();
+            }
+            
+            console.log('✅ Jogo Next Gen inicializado com sucesso!');
+        }
+
+        function initializeOfflineGame() {
+            console.log('🎮 Iniciando modo offline Next Gen...');
+            gameState.isOnline = false;
+            
+            // Load from localStorage
+            const savedData = localStorage.getItem(`tycoon_nextgen_${gameState.playerName}_${gameState.roomCode}`);
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    gameState.money = data.money || 100;
+                    gameState.inventory = data.inventory || {};
+                    console.log('✅ Save Next Gen carregado do localStorage');
+                } catch (e) {
+                    console.log('⚠️ Erro ao carregar save, usando dados padrão');
+                }
+            }
+            
+            // Calculate and update displays
+            calculateIncome();
+            updateDisplay();
+            updateInventoryDisplay();
+            
+            // Initialize belt
+            console.log('🏭 Gerando esteira Next Gen...');
+            if (!currentBeltData) {
+                currentBeltData = generateNewBelt();
+            }
+            updateBeltDisplay(currentBeltData);
+            console.log('✅ Esteira Next Gen carregada com', currentBeltData.items.length, 'itens');
+            
+            // Initialize players display
+            updatePlayersDisplay();
+            
+            // Start game loops
+            startGameLoops();
+            
+            showNotification('🚀 Jogo Next Gen funcionando perfeitamente!', 'success');
+            console.log('✅ Modo offline Next Gen inicializado!');
+        }
+
+        function savePlayerData() {
+            try {
+                const data = {
+                    money: gameState.money,
+                    inventory: gameState.inventory,
+                    lastSave: Date.now()
+                };
+                localStorage.setItem(`tycoon_nextgen_${gameState.playerName}_${gameState.roomCode}`, JSON.stringify(data));
+                console.log('💾 Dados Next Gen salvos no localStorage');
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+            }
+        }
+
+        // Sistema de aleatoriedade verdadeira com crypto
+        function generateTrueRandom() {
+            if (window.crypto && window.crypto.getRandomValues) {
+                const array = new Uint32Array(1);
+                window.crypto.getRandomValues(array);
+                return array[0] / (0xffffffff + 1);
+            }
+            // Fallback com múltiplas fontes de entropia
+            const time = Date.now();
+            const perf = performance.now();
+            const mouse = Math.random();
+            return ((time * perf * mouse) % 1000000) / 1000000;
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(generateTrueRandom() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function generateNewBelt() {
+            console.log('🎲 Gerando nova esteira com aleatoriedade verdadeira...');
+            
+            // Usar timestamp + performance + crypto para seed único
+            const uniqueSeed = Date.now() + performance.now() + (generateTrueRandom() * 1000000);
+            console.log('🔢 Seed único:', uniqueSeed);
+            
+            const beltCharacters = [];
+            const availableChars = shuffleArray(characterList);
+            
+            // Gerar entre 10-18 itens com distribuição balanceada
+            const targetItems = 10 + Math.floor(generateTrueRandom() * 9);
+            
+            // Garantir pelo menos um de cada raridade
+            const rarityGroups = {
+                'comum': characterList.filter(name => characterDatabase[name].rarity === 'comum'),
+                'incomum': characterList.filter(name => characterDatabase[name].rarity === 'incomum'),
+                'raro': characterList.filter(name => characterDatabase[name].rarity === 'raro'),
+                'epico': characterList.filter(name => characterDatabase[name].rarity === 'epico'),
+                'lendario': characterList.filter(name => characterDatabase[name].rarity === 'lendario'),
+                'mitico': characterList.filter(name => characterDatabase[name].rarity === 'mitico'),
+                'prismatico': characterList.filter(name => characterDatabase[name].rarity === 'prismatico')
+            };
+            
+            // Adicionar pelo menos um comum e incomum
+            beltCharacters.push(
+                rarityGroups.comum[Math.floor(generateTrueRandom() * rarityGroups.comum.length)],
+                rarityGroups.incomum[Math.floor(generateTrueRandom() * rarityGroups.incomum.length)]
+            );
+            
+            // Preencher o resto com distribuição probabilística
+            while (beltCharacters.length < targetItems) {
+                const rand = generateTrueRandom();
+                let selectedRarity;
+                
+                if (rand < 0.40) selectedRarity = 'comum';
+                else if (rand < 0.65) selectedRarity = 'incomum';
+                else if (rand < 0.80) selectedRarity = 'raro';
+                else if (rand < 0.92) selectedRarity = 'epico';
+                else if (rand < 0.97) selectedRarity = 'lendario';
+                else if (rand < 0.995) selectedRarity = 'mitico';
+                else selectedRarity = 'prismatico';
+                
+                const candidates = rarityGroups[selectedRarity];
+                if (candidates.length > 0) {
+                    const randomChar = candidates[Math.floor(generateTrueRandom() * candidates.length)];
+                    if (!beltCharacters.includes(randomChar)) {
+                        beltCharacters.push(randomChar);
+                    }
+                }
+            }
+            
+            // Embaralhar ordem final múltiplas vezes
+            let finalBelt = shuffleArray(beltCharacters);
+            finalBelt = shuffleArray(finalBelt);
+            finalBelt = shuffleArray(finalBelt);
+            
+            const beltItems = finalBelt.map(charName => {
+                const char = characterDatabase[charName];
+                const basePrice = char.income * (12 + Math.floor(generateTrueRandom() * 8));
+                const variation = (generateTrueRandom() - 0.5) * 0.6; // ±30% variation
+                const price = Math.floor(basePrice * (1 + variation));
+                return {
+                    name: charName,
+                    rarity: char.rarity,
+                    income: char.income,
+                    price: Math.max(price, 1),
+                    id: `item_${Date.now()}_${Math.floor(generateTrueRandom() * 1000000)}`
+                };
+            });
+            
+            console.log('✅ Esteira gerada:', beltItems.map(i => `${i.name} (${i.rarity})`));
+            
+            return {
+                items: beltItems,
+                soldItems: [],
+                lastUpdate: Date.now(),
+                seed: uniqueSeed
+            };
+        }
+
+        function updateBeltDisplay(beltData) {
+            const beltItems = document.getElementById('beltItems');
+            
+            beltItems.innerHTML = beltData.items.map(item => {
+                const isSold = beltData.soldItems && beltData.soldItems.includes(item.name);
+                return `
+                    <div class="belt-item ${item.rarity} ${isSold ? 'sold-out' : ''}" 
+                         onclick="${isSold ? '' : `buyFromBelt('${item.name}', ${item.price})`}">
+                        ${item.name}<br>
+                        <small>+$${item.income}/seg</small>
+                        <div class="belt-item-price">${isSold ? 'VENDIDO' : '$' + item.price}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function buyFromBelt(characterName, price) {
+            const char = characterDatabase[characterName];
+            if (!char) {
+                console.log('Personagem não encontrado:', characterName);
+                return;
+            }
+            
+            if (gameState.money < price) {
+                showNotification('💰 Dinheiro insuficiente!', 'failure');
+                return;
+            }
+            
+            // Verificar se já foi vendido (multiplayer ou local)
+            if (currentBeltData && currentBeltData.soldItems && currentBeltData.soldItems.includes(characterName)) {
+                showNotification('⚠️ Item já foi vendido!', 'warning');
+                return;
+            }
+            
+            const soldKey = `sold_nextgen_${gameState.roomCode}_${characterName}`;
+            if (localStorage.getItem(soldKey)) {
+                showNotification('⚠️ Item já foi vendido!', 'warning');
+                return;
+            }
+            
+            // Tentar comprar via multiplayer primeiro
+            if (multiplayerClient && multiplayerClient.isConnected) {
+                const success = multiplayerClient.buyItem(characterName, price);
+                if (!success) {
+                    showNotification('❌ Erro na compra multiplayer!', 'failure');
+                    return;
+                }
+            } else {
+                // Marcar como vendido localmente
+                localStorage.setItem(soldKey, 'true');
+            }
+            
+            // Atualizar inventário do jogador
+            gameState.money -= price;
+            
+            if (gameState.inventory[characterName]) {
+                gameState.inventory[characterName]++;
+            } else {
+                gameState.inventory[characterName] = 1;
+            }
+            
+            calculateIncome();
+            updateInventoryDisplay();
+            updateDisplay();
+            savePlayerData();
+            
+            // Marcar como vendido na esteira atual
+            if (currentBeltData) {
+                if (!currentBeltData.soldItems) {
+                    currentBeltData.soldItems = [];
+                }
+                currentBeltData.soldItems.push(characterName);
+                updateBeltDisplay(currentBeltData);
+            }
+            
+            // Atualizar dados no servidor se conectado
+            if (multiplayerClient && multiplayerClient.isConnected) {
+                multiplayerClient.updatePlayer({
+                    money: gameState.money,
+                    income: gameState.income,
+                    inventory: gameState.inventory
+                });
+            }
+            
+            showNotification(`✅ Comprou ${characterName} por $${price}!`, 'success');
+        }
+
+        function buyCrate(crateType) {
+            const crate = crateTypes[crateType];
+            if (!crate) return;
+            
+            if (gameState.money < crate.price) {
+                showNotification('💰 Dinheiro insuficiente!', 'failure');
+                return;
+            }
+            
+            gameState.money -= crate.price;
+            
+            // Determine rarity
+            const rand = Math.random();
+            let cumulativeChance = 0;
+            let selectedRarity = 'comum';
+            
+            for (let rarityData of crate.rarities) {
+                cumulativeChance += rarityData.chance;
+                if (rand <= cumulativeChance) {
+                    selectedRarity = rarityData.rarity;
+                    break;
+                }
+            }
+            
+            // Get random character of selected rarity
+            const charactersOfRarity = characterList.filter(name => 
+                characterDatabase[name].rarity === selectedRarity
+            );
+            
+            if (charactersOfRarity.length === 0) {
+                showNotification('❌ Erro no crate!', 'failure');
+                return;
+            }
+            
+            const randomChar = charactersOfRarity[Math.floor(Math.random() * charactersOfRarity.length)];
+            
+            if (gameState.inventory[randomChar]) {
+                gameState.inventory[randomChar]++;
+            } else {
+                gameState.inventory[randomChar] = 1;
+            }
+            
+            calculateIncome();
+            updateInventoryDisplay();
+            updateDisplay();
+            savePlayerData();
+            
+            const rarityEmojis = {
+                'comum': '⚪',
+                'incomum': '🟢',
+                'raro': '🔵',
+                'epico': '🟣',
+                'lendario': '🟠',
+                'mitico': '🔴',
+                'prismatico': '🌈'
+            };
+            
+            showNotification(`🎁 Crate aberto! ${rarityEmojis[selectedRarity]} ${randomChar}!`, 'success');
+        }
+
+        function calculateIncome() {
+            gameState.income = 0;
+            
+            Object.entries(gameState.inventory).forEach(([charName, count]) => {
+                const char = characterDatabase[charName];
+                if (char) {
+                    gameState.income += char.income * count;
+                }
+            });
+        }
+
+        function updateDisplay() {
+            document.getElementById('money').textContent = Math.floor(gameState.money).toLocaleString();
+            document.getElementById('income').textContent = gameState.income.toLocaleString();
+            document.getElementById('totalItems').textContent = Object.keys(gameState.inventory).length;
+            
+            let totalValue = 0;
+            Object.entries(gameState.inventory).forEach(([charName, count]) => {
+                const char = characterDatabase[charName];
+                if (char) {
+                    totalValue += char.income * count * 15;
+                }
+            });
+            document.getElementById('totalValue').textContent = totalValue.toLocaleString();
+        }
+
+        function updateInventoryDisplay() {
+            const grid = document.getElementById('inventoryGrid');
+            
+            if (Object.keys(gameState.inventory).length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: rgba(255, 255, 255, 0.7); padding: 24px; font-size: 1rem;">Inventário vazio. Compre crates ou colete da esteira!</div>';
+                return;
+            }
+            
+            const sortedItems = Object.entries(gameState.inventory).sort(([a], [b]) => {
+                const rarityOrder = { 'prismatico': 7, 'mitico': 6, 'lendario': 5, 'epico': 4, 'raro': 3, 'incomum': 2, 'comum': 1 };
+                return rarityOrder[characterDatabase[b].rarity] - rarityOrder[characterDatabase[a].rarity];
+            });
+            
+            grid.innerHTML = sortedItems.map(([charName, count]) => {
+                const char = characterDatabase[charName];
+                const isSelected = gameState.selectedItems.includes(charName);
+                
+                return `
+                    <div class="inventory-item ${char.rarity} ${isSelected ? 'selected' : ''}" 
+                         onclick="selectItem('${charName}')">
+                        <div class="item-name">${charName}</div>
+                        <div class="item-income">+$${char.income}/seg</div>
+                        ${count > 1 ? `<div class="item-count">${count}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updatePlayersDisplay() {
+            const playersList = document.getElementById('playersList');
+            
+            playersList.innerHTML = `
+                <div style="text-align: center; color: #00ff88; padding: 24px; font-size: 1rem;">
+                    🎮 Você está jogando!<br>
+                    <strong>Código da sala: ${gameState.roomCode}</strong><br>
+                    <span style="color: rgba(255, 255, 255, 0.7);">Aguardando outros jogadores...</span>
+                </div>
+            `;
+        }
+
+        function selectItem(characterName) {
+            const index = gameState.selectedItems.indexOf(characterName);
+            if (index > -1) {
+                gameState.selectedItems.splice(index, 1);
+            } else {
+                if (gameState.selectedItems.length >= 3) {
+                    showNotification('⚠️ Máximo 3 itens por troca!', 'warning');
+                    return;
+                }
+                gameState.selectedItems.push(characterName);
+            }
+            
+            updateInventoryDisplay();
+            updateSelectedItemsDisplay();
+        }
+
+        function updateSelectedItemsDisplay() {
+            const selectedList = document.getElementById('selectedItemsList');
+            
+            if (gameState.selectedItems.length === 0) {
+                selectedList.textContent = 'Nenhum item selecionado';
+                document.getElementById('tradeBotBtn').disabled = true;
+            } else {
+                selectedList.textContent = gameState.selectedItems.join(', ');
+                document.getElementById('tradeBotBtn').disabled = false;
+            }
+        }
+
+        function tradeWithBot() {
+            if (gameState.selectedItems.length === 0) {
+                showNotification('⚠️ Selecione itens para trocar!', 'warning');
+                return;
+            }
+            
+            // Calculate trade value
+            let tradeValue = 0;
+            gameState.selectedItems.forEach(charName => {
+                const char = characterDatabase[charName];
+                tradeValue += char.income * 12;
+            });
+            
+            // Bot offers random items of similar value
+            const botOffer = generateBotOffer(tradeValue);
+            
+            setTimeout(() => {
+                const accept = confirm(`🤖 Bot Next Gen oferece:\n${botOffer.items.join('\n')}\n\nAceitar troca?`);
+                
+                if (accept) {
+                    // Remove selected items
+                    gameState.selectedItems.forEach(charName => {
+                        gameState.inventory[charName]--;
+                        if (gameState.inventory[charName] <= 0) {
+                            delete gameState.inventory[charName];
+                        }
+                    });
+                    
+                    // Add bot items
+                    botOffer.items.forEach(charName => {
+                        if (gameState.inventory[charName]) {
+                            gameState.inventory[charName]++;
+                        } else {
+                            gameState.inventory[charName] = 1;
+                        }
+                    });
+                    
+                    showNotification('✅ Troca realizada com sucesso!', 'success');
+                } else {
+                    showNotification('❌ Troca cancelada!', 'info');
+                }
+                
+                gameState.selectedItems = [];
+                calculateIncome();
+                updateInventoryDisplay();
+                updateSelectedItemsDisplay();
+                updateDisplay();
+                savePlayerData();
+                
+            }, 2000);
+        }
+
+        function generateBotOffer(targetValue) {
+            const availableChars = characterList.filter(name => 
+                !gameState.selectedItems.includes(name)
+            );
+            
+            const offer = [];
+            let currentValue = 0;
+            
+            while (currentValue < targetValue * 0.85 && offer.length < 3) {
+                const randomChar = availableChars[Math.floor(Math.random() * availableChars.length)];
+                const char = characterDatabase[randomChar];
+                
+                if (!offer.includes(randomChar)) {
+                    offer.push(randomChar);
+                    currentValue += char.income * 12;
+                }
+            }
+            
+            return { items: offer, value: currentValue };
+        }
+
+        function attackRandomPlayer() {
+            const commonItems = characterList.filter(name => 
+                characterDatabase[name].rarity === 'comum' || 
+                characterDatabase[name].rarity === 'incomum'
+            );
+            const stolenItem = commonItems[Math.floor(Math.random() * commonItems.length)];
+            
+            if (Math.random() <= 0.45) {
+                if (gameState.inventory[stolenItem]) {
+                    gameState.inventory[stolenItem]++;
+                } else {
+                    gameState.inventory[stolenItem] = 1;
+                }
+                
+                calculateIncome();
+                updateInventoryDisplay();
+                updateDisplay();
+                savePlayerData();
+                
+                showNotification(`⚔️ Roubou ${stolenItem} de um bot!`, 'success');
+            } else {
+                showNotification(`❌ Falhou ao atacar o bot!`, 'failure');
+            }
+        }
+
+        function collectFromBelt() {
+            showNotification('💡 Clique em um item na esteira para comprar!', 'info');
+        }
+
+        function startGameLoops() {
+            // Income loop
+            setInterval(() => {
+                gameState.money += gameState.income;
+                updateDisplay();
+            }, 1000);
+            
+            // Auto-save loop
+            setInterval(() => {
+                savePlayerData();
+            }, 15000);
+            
+            // Belt refresh loop
+            setInterval(() => {
+                // Só gerar nova esteira se não estiver em multiplayer
+                if (!gameState.isOnline || !multiplayerClient || !multiplayerClient.isConnected) {
+                    // Limpar itens vendidos da esteira anterior
+                    const keys = Object.keys(localStorage);
+                    keys.forEach(key => {
+                        if (key.startsWith(`sold_nextgen_${gameState.roomCode}_`)) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                    
+                    currentBeltData = generateNewBelt();
+                    updateBeltDisplay(currentBeltData);
+                    showNotification('🔄 Nova esteira carregada!', 'info');
+                }
+                // Em multiplayer, o servidor controla a esteira
+            }, 90000);
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            savePlayerData();
+            console.log('💾 Dados Next Gen salvos antes de sair');
+        });
+
+        // Performance optimization
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Character Tycoon Next Gen carregado!');
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97b1f375e2511b11',t:'MTc1NzIwMzQ5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
