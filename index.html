@@ -1073,15 +1073,20 @@
         let multiplayerClient = null;
         let currentBeltData = null;
 
-        // Character Database - Personagens originais
-        const characterDatabase = {
+         const characterDatabase = {
             // Prismáticos (Ultra Raros)
-            "Lá grande Combinação": { rarity: 'prismatico', income: 500 },
-            "Los combinações": { rarity: 'prismatico', income: 450 },
-            "Lá suprema combinação": { rarity: 'prismatico', income: 600 },
+            "Lá grande Combinação": { rarity: 'secreto', income: 500 },
+            "Los combinações": { rarity: 'secreto', income: 450 },
+            "Lá suprema combinação": { rarity: 'secreto', income: 600 },
+
+            //Brainrot god(TÁ RARO MAN)
+            "Tralalero Tralala": { rarity: 'brainrotgod', income: 250 },
+            "Tralali Tralala": { rarity: 'brainrotgod', income: 270 },
+            "Matteo": { rarity: 'brainrotgod', income: 290 },
+            
             
             // Míticos
-            "Matteo": { rarity: 'mitico', income: 200 },
+            
             "Centralucci Nuclearucci": { rarity: 'mitico', income: 180 },
             "Chef Crabracadabra": { rarity: 'mitico', income: 160 },
             
@@ -1093,8 +1098,8 @@
             
             // Épicos
             "Tung Tung Tung Sahur": { rarity: 'epico', income: 35 },
-            "Bailarina Cappuccina": { rarity: 'epico', income: 32 },
-            "Shpioniro Golubiro": { rarity: 'epico', income: 30 },
+            "Bailarina Cappuccina": { rarity: 'lendario', income: 60 },
+            "Shpioniro Golubiro": { rarity: 'mitico', income: 140 },
             "La Vaca Saturno Saturnita": { rarity: 'epico', income: 28 },
             "Bombardiere Lucertola": { rarity: 'epico', income: 25 },
             
@@ -1112,22 +1117,23 @@
             "Blueberrinni Octopussini": { rarity: 'incomum', income: 5 },
             
             // Comuns
-            "Tralalero Tralala": { rarity: 'comum', income: 3 },
+            
             "Lirilì Larilà": { rarity: 'comum', income: 2 },
             "Hipocactus": { rarity: 'comum', income: 2 },
             "Trippi Troppi": { rarity: 'comum', income: 2 },
             "Fruli Frula": { rarity: 'comum', income: 1 },
-            "Pot Hotspot": { rarity: 'comum', income: 1 },
+            "Pot Hotspot": { rarity: 'secreto', income: 700 },
             "Brri Brri Bicus Dicus Bombicus": { rarity: 'comum', income: 1 },
             "Talpa Di Ferro": { rarity: 'comum', income: 1 },
             "Svinino Bombondino": { rarity: 'comum', income: 1 },
             "Tric Trac Baraboom": { rarity: 'comum', income: 1 },
             "Orangutini Ananasini": { rarity: 'comum', income: 1 },
-            "Espressona Señora": { rarity: 'comum', income: 1 },
+            "Espressona Señora": { rarity: 'brainrotgod', income: 1 },
             "Zibra Zubra Zibralini": { rarity: 'comum', income: 1 },
-            "Graipussi Medussi": { rarity: 'comum', income: 1 },
+            "Graipussi Medussi": { rarity: 'secreto', income: 1 },
             "Tigrrullini Watermellini": { rarity: 'comum', income: 1 }
         };
+
 
         const characterList = Object.keys(characterDatabase);
 
@@ -1156,9 +1162,9 @@
             mythic: {
                 price: 8000,
                 rarities: [
-                    { rarity: 'lendario', chance: 0.80 },
-                    { rarity: 'mitico', chance: 0.15 },
-                    { rarity: 'prismatico', chance: 0.05 }
+                    { rarity: 'mitico', chance: 0.80 },
+                    { rarity: 'brainrotgod', chance: 0.15 },
+                    { rarity: 'secreto', chance: 0.05 }
                 ]
             }
         };
@@ -2116,3 +2122,4 @@
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97b1f375e2511b11',t:'MTc1NzIwMzQ5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
