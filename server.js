@@ -1,234 +1,240 @@
-const WebSocket = require('ws');
-const http = require('http');
-
 // Criar servidor HTTP
 const server = http.createServer();
 const wss = new WebSocket.Server({ server });
 
-// Armazenar conexões por sala
+// Armazenar dados dos jogadores e salas
 const rooms = new Map();
-const userConnections = new Map();
+const players = new Map();
 
-console.log('🚀 Character Tycoon Server iniciando...');
+console.log('🚀 Servidor Character Tycoon Multiplayer iniciando...');
 
 wss.on('connection', (ws) => {
-    console.log('👤 Nova conexão estabelecida');
+    console.log('🔗 Nova conexão estabelecida');
     
     ws.on('message', (message) => {
         try {
             const data = JSON.parse(message);
-            console.log('📨 Mensagem recebida:', data.type, 'de', data.username || 'anônimo');
+            console.log('📨 Mensagem recebida:', data.type, data);
             
-            // Armazenar conexão do usuário
-            if (data.username && data.room) {
-                userConnections.set(data.username, { ws, room: data.room });
-                
-                // Adicionar à sala
-                if (!rooms.has(data.room)) {
-                    rooms.set(data.room, new Set());
-                }
-                rooms.get(data.room).add(ws);
-                ws.currentRoom = data.room;
-                ws.username = data.username;
-            }
-            
-            // Processar diferentes tipos de mensagem
             switch (data.type) {
-                case 'chat_message':
-                    broadcastToRoom(data.room, {
-                        type: 'chat_message',
-                        username: data.username,
-                        message: data.message,
-                        timestamp: Date.now()
-                    }, ws);
+                case 'player_join':
+                    handlePlayerJoin(ws, data);
                     break;
                     
-                case 'new_conveyor_generated':
-                    broadcastToRoom(data.room, {
-                        type: 'new_conveyor_generated',
-                        conveyorItems: data.conveyorItems,
-                        generatedBy: data.username
-                    }, ws);
+                case 'chat_message':
+                    handleChatMessage(ws, data);
                     break;
                     
                 case 'auction_started':
-                    // Repassar leilão iniciado para todos na sala
-                    broadcastToRoom(data.room, {
-                        type: 'auction_started',
-                        itemIndex: data.itemIndex,
-                        item: data.item,
-                        bidder: data.bidder,
-                        timestamp: Date.now()
-                    }, ws);
-                    console.log(`⚔️ Leilão iniciado por ${data.bidder} para ${data.item.name}`);
+                    handleAuctionStarted(ws, data);
                     break;
                     
                 case 'auction_ended':
-                    // Repassar resultado do leilão
-                    broadcastToRoom(data.room, {
-                        type: 'auction_ended',
-                        itemIndex: data.itemIndex,
-                        winner: data.winner,
-                        itemName: data.itemName,
-                        timestamp: Date.now()
-                    }, ws);
-                    console.log(`🏆 Leilão vencido por ${data.winner} - ${data.itemName}`);
+                    handleAuctionEnded(ws, data);
                     break;
                     
                 case 'admin_start_event':
-                    broadcastToRoom(data.room, {
-                        type: 'admin_event_start',
-                        admin: data.admin,
-                        event: data.event,
-                        duration: data.duration
-                    }, ws);
-                    console.log(`🎉 Evento iniciado por admin ${data.admin}: ${data.event.name}`);
-                    break;
-                    
-                case 'admin_action':
-                    broadcastToRoom(data.room, {
-                        type: 'admin_action',
-                        admin: data.admin,
-                        action: data.action
-                    }, ws);
-                    break;
-                    
-                case 'player_join':
-                    // Notificar outros jogadores
-                    broadcastToRoom(data.room, {
-                        type: 'player_joined',
-                        username: data.username,
-                        timestamp: Date.now()
-                    }, ws);
-                    
-                    // Enviar lista de jogadores online
-                    sendPlayersOnline(data.room);
+                    handleAdminEvent(ws, data);
                     break;
                     
                 default:
                     console.log('❓ Tipo de mensagem desconhecido:', data.type);
             }
-            
         } catch (error) {
             console.error('❌ Erro ao processar mensagem:', error);
         }
     });
     
     ws.on('close', () => {
-        console.log('👋 Conexão fechada');
-        
-        // Remover da sala
-        if (ws.currentRoom && rooms.has(ws.currentRoom)) {
-            rooms.get(ws.currentRoom).delete(ws);
-            
-            // Se sala ficou vazia, remover
-            if (rooms.get(ws.currentRoom).size === 0) {
-                rooms.delete(ws.currentRoom);
-                console.log(`🏠 Sala ${ws.currentRoom} removida (vazia)`);
-            } else {
-                // Atualizar lista de jogadores online
-                sendPlayersOnline(ws.currentRoom);
-            }
-        }
-        
-        // Remover das conexões de usuário
-        if (ws.username) {
-            userConnections.delete(ws.username);
-        }
+        handlePlayerDisconnect(ws);
+        console.log('🔌 Conexão fechada');
     });
     
     ws.on('error', (error) => {
-        console.error('❌ Erro na conexão WebSocket:', error);
+        console.error('❌ Erro WebSocket:', error);
     });
 });
 
-// Função para broadcast para uma sala específica
-function broadcastToRoom(roomName, message, excludeWs = null) {
-    if (!rooms.has(roomName)) {
-        console.log(`⚠️ Tentativa de broadcast para sala inexistente: ${roomName}`);
-        return;
+function handlePlayerJoin(ws, data) {
+    const { username, room } = data;
+    
+    // Registrar jogador
+    players.set(ws, { username, room, isAdmin: false });
+    
+    // Adicionar à sala
+    if (!rooms.has(room)) {
+        rooms.set(room, new Set());
+    }
+    rooms.get(room).add(ws);
+    
+    console.log(`👋 ${username} entrou na sala: ${room}`);
+    
+    // Notificar outros jogadores da sala
+    broadcastToRoom(room, {
+        type: 'player_joined',
+        username: username
+    }, ws);
+    
+    // Enviar lista de jogadores online para todos na sala
+    updatePlayersInRoom(room);
+}
+
+function handleChatMessage(ws, data) {
+    const player = players.get(ws);
+    if (!player) return;
+    
+    const { message, room } = data;
+    
+    console.log(`💬 [${room}] ${player.username}: ${message}`);
+    
+    // Enviar mensagem para todos na sala
+    broadcastToRoom(room, {
+        type: 'chat_message',
+        username: player.username,
+        message: message,
+        timestamp: Date.now()
+    });
+}
+
+function handleAuctionStarted(ws, data) {
+    const player = players.get(ws);
+    if (!player) return;
+    
+    const { item, room } = data;
+    
+    console.log(`⚔️ [${room}] ${player.username} iniciou leilão: ${item.name} por ${item.price}`);
+    
+    // Enviar leilão para todos na sala (exceto quem iniciou)
+    broadcastToRoom(room, {
+        type: 'auction_started',
+        item: item,
+        bidder: player.username,
+        timestamp: Date.now()
+    }, ws);
+}
+
+function handleAuctionEnded(ws, data) {
+    const player = players.get(ws);
+    if (!player) return;
+    
+    const { winner, itemName, room } = data;
+    
+    console.log(`🏆 [${room}] Leilão de ${itemName} vencido por ${winner}`);
+    
+    // Notificar todos na sala sobre o resultado
+    broadcastToRoom(room, {
+        type: 'auction_ended',
+        winner: winner,
+        itemName: itemName,
+        timestamp: Date.now()
+    });
+}
+
+function handleAdminEvent(ws, data) {
+    const player = players.get(ws);
+    if (!player) return;
+    
+    const { admin, event, duration, room } = data;
+    
+    console.log(`🎉 [${room}] Admin ${admin} iniciou evento: ${event.name}`);
+    
+    // Enviar evento para todos na sala
+    broadcastToRoom(room, {
+        type: 'admin_event_start',
+        admin: admin,
+        event: event,
+        duration: duration,
+        timestamp: Date.now()
+    });
+    
+    // Finalizar evento após duração
+    setTimeout(() => {
+        broadcastToRoom(room, {
+            type: 'admin_event_end',
+            admin: admin,
+            event: event,
+            timestamp: Date.now()
+        });
+        console.log(`🎉 [${room}] Evento ${event.name} finalizado`);
+    }, duration * 60 * 1000);
+}
+
+function handlePlayerDisconnect(ws) {
+    const player = players.get(ws);
+    if (!player) return;
+    
+    const { username, room } = player;
+    
+    // Remover da sala
+    if (rooms.has(room)) {
+        rooms.get(room).delete(ws);
+        if (rooms.get(room).size === 0) {
+            rooms.delete(room);
+        }
     }
     
-    const roomConnections = rooms.get(roomName);
-    let sentCount = 0;
+    // Remover dos jogadores
+    players.delete(ws);
     
-    roomConnections.forEach(ws => {
+    console.log(`👋 ${username} saiu da sala: ${room}`);
+    
+    // Atualizar lista de jogadores
+    updatePlayersInRoom(room);
+}
+
+function broadcastToRoom(roomName, message, excludeWs = null) {
+    if (!rooms.has(roomName)) return;
+    
+    const roomPlayers = rooms.get(roomName);
+    const messageStr = JSON.stringify(message);
+    
+    roomPlayers.forEach(ws => {
         if (ws !== excludeWs && ws.readyState === WebSocket.OPEN) {
             try {
-                ws.send(JSON.stringify(message));
-                sentCount++;
+                ws.send(messageStr);
             } catch (error) {
                 console.error('❌ Erro ao enviar mensagem:', error);
-                // Remover conexão inválida
-                roomConnections.delete(ws);
             }
         }
     });
-    
-    console.log(`📡 Mensagem enviada para ${sentCount} jogadores na sala ${roomName}`);
 }
 
-// Função para enviar lista de jogadores online
-function sendPlayersOnline(roomName) {
+function updatePlayersInRoom(roomName) {
     if (!rooms.has(roomName)) return;
     
-    const roomConnections = rooms.get(roomName);
-    const playersOnline = [];
+    const roomPlayers = rooms.get(roomName);
+    const playersList = [];
     
-    roomConnections.forEach(ws => {
-        if (ws.username && ws.readyState === WebSocket.OPEN) {
-            playersOnline.push({
-                username: ws.username,
-                isAdmin: ws.isAdmin || false
+    roomPlayers.forEach(ws => {
+        const player = players.get(ws);
+        if (player) {
+            playersList.push({
+                username: player.username,
+                isAdmin: player.isAdmin
             });
         }
     });
     
+    // Enviar lista atualizada para todos na sala
     broadcastToRoom(roomName, {
         type: 'players_online',
-        players: playersOnline,
-        count: playersOnline.length
+        players: playersList
     });
 }
 
-// Estatísticas do servidor a cada 30 segundos
-setInterval(() => {
-    const totalRooms = rooms.size;
-    const totalConnections = Array.from(rooms.values()).reduce((sum, room) => sum + room.size, 0);
-    
-    console.log(`📊 Estatísticas: ${totalRooms} salas ativas, ${totalConnections} conexões`);
-    
-    // Listar salas ativas
-    rooms.forEach((connections, roomName) => {
-        console.log(`  🏠 Sala "${roomName}": ${connections.size} jogadores`);
-    });
-}, 30000);
-
 // Iniciar servidor na porta 8080
-const PORT = process.env.PORT || 8080;
+const PORT = 8080;
 server.listen(PORT, () => {
-    console.log(`🎮 Character Tycoon Server rodando na porta ${PORT}`);
-    console.log(`🌐 WebSocket Server ativo!`);
-    console.log(`📡 Pronto para receber conexões...`);
+    console.log(`🎮 Servidor Character Tycoon rodando na porta ${PORT}`);
+    console.log(`🌐 WebSocket disponível em ws://localhost:${PORT}`);
+    console.log('✅ Pronto para conexões multiplayer!');
 });
 
-// Tratamento de erros do servidor
-server.on('error', (error) => {
-    console.error('❌ Erro no servidor:', error);
+// Tratamento de erros
+process.on('uncaughtException', (error) => {
+    console.error('❌ Erro não capturado:', error);
 });
 
-process.on('SIGINT', () => {
-    console.log('\n👋 Encerrando servidor...');
-    
-    // Notificar todos os clientes
-    rooms.forEach((connections, roomName) => {
-        broadcastToRoom(roomName, {
-            type: 'server_shutdown',
-            message: 'Servidor sendo reiniciado...'
-        });
-    });
-    
-    setTimeout(() => {
-        process.exit(0);
-    }, 1000);
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Promise rejeitada:', reason);
 });
