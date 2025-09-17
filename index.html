@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Character Tycoon - ULTRA SEGURO!</title>
+    <title>Character Tycoon - MULTIPLAYER + FUSÕES!</title>
     <style>
         * {
             margin: 0;
@@ -239,6 +239,7 @@
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
         }
 
+
         @keyframes rainbow {
             0% { border-color: #ff1493; }
             25% { border-color: #00ff00; }
@@ -252,6 +253,8 @@
             50% { border-color: #ffff00; box-shadow: 0 0 30px rgba(255, 255, 0, 0.8); }
             100% { border-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
         }
+
+
 
         @keyframes pulse {
             0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 20, 147, 0.5); }
@@ -313,6 +316,48 @@
             margin: 20px 0;
         }
 
+        .fusion-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .fusion-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .fusion-recipe {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .fusion-recipe.available {
+            border-color: #4caf50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .fusion-recipe.unavailable {
+            border-color: #f44336;
+            background: rgba(244, 67, 54, 0.2);
+            opacity: 0.6;
+        }
+
         @media (max-width: 768px) {
             .game-area {
                 grid-template-columns: 1fr;
@@ -328,7 +373,7 @@
     <div class="container">
         <div class="header">
             <h1 class="title">🎮 CHARACTER TYCOON 🎮</h1>
-            <p>Sistema de Contas ULTRA SEGURO - Impossível Perder!</p>
+            <p>MULTIPLAYER + SISTEMA DE FUSÕES COMPLETO!</p>
         </div>
 
         <!-- Login Container -->
@@ -411,13 +456,21 @@
 
                 <!-- Conveyor Belt -->
                 <div class="conveyor-belt">
-                    <h3>⚔️ ESTEIRA DE LEILÕES - Clique para Iniciar Leilão de 10s!</h3>
+                    <h3>⚔️ ESTEIRA DE LEILÕES MULTIPLAYER - Clique para Iniciar Leilão!</h3>
                     <p style="font-size: 14px; color: rgba(255,255,255,0.8); margin-bottom: 15px;">
-                        💡 Quando alguém compra, outros têm 10s para dar lance maior! Preço aumenta 20% a cada lance!
+                        💡 Quando alguém compra, TODOS os jogadores veem e podem dar lance maior! Preço aumenta 20%!<br>
+                        🎪 <strong>Eventos só podem ser iniciados por admins!</strong>
                     </p>
                     <div class="conveyor-track" id="conveyorTrack">
                         <!-- Characters will be populated here -->
                     </div>
+                </div>
+
+                <!-- Event Status -->
+                <div id="eventStatus" style="display: none; background: rgba(255, 105, 180, 0.2); border: 2px solid #ff69b4; border-radius: 15px; padding: 15px; margin: 15px 0; text-align: center;">
+                    <h3 id="eventName">🎪 Nenhum evento ativo</h3>
+                    <p id="eventDescription">Aguarde o próximo evento especial!</p>
+                    <div id="eventTimer" style="font-size: 18px; font-weight: bold; margin-top: 10px;">⏰ 0:00</div>
                 </div>
 
                 <!-- Quick Actions -->
@@ -425,6 +478,8 @@
                     <button class="btn" onclick="generateConveyorItems()">🔄 Atualizar Esteira</button>
                     <button class="btn" onclick="buyCrate()">📦 Comprar Crate (💰 100)</button>
                     <button class="btn" onclick="playSlotMachine()">🎰 Cassino (💰 50)</button>
+                    <button class="btn" onclick="openFusionLab()" style="background: #9b59b6;">🧪 LABORATÓRIO DE FUSÃO</button>
+
                     <button class="btn" onclick="performRebirth()">⭐ REBIRTH (💰 5.000)</button>
                     <button class="btn" onclick="forceBackup()" style="background: #28a745;">💾 BACKUP MANUAL</button>
                     <button class="btn" onclick="openAdminPanel()" style="background: #ff1493;">🔧 Admin</button>
@@ -449,10 +504,26 @@
                     <button class="btn" onclick="sendChatMessage()" style="padding: 8px 15px; font-size: 12px;">📤</button>
                 </div>
                 
-                <h3 style="margin-top: 20px;">👥 Jogadores Online</h3>
+                <h3 style="margin-top: 20px;">👥 Jogadores Online (<span id="onlineCount">0</span>)</h3>
                 <div id="playersOnline">
                     <p style="text-align: center; color: rgba(255,255,255,0.7);">Carregando...</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fusion Lab Modal -->
+    <div class="fusion-modal" id="fusionModal">
+        <div class="fusion-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>🧪 LABORATÓRIO DE FUSÃO</h2>
+                <button class="btn" onclick="closeFusionLab()" style="background: #e74c3c;">❌ Fechar</button>
+            </div>
+            <p style="margin-bottom: 20px; color: rgba(255,255,255,0.8);">
+                🔬 Combine personagens para criar versões mais raras! Chances de sucesso variam de 5% a 70%.
+            </p>
+            <div id="fusionRecipesList">
+                <!-- Recipes will be populated here -->
             </div>
         </div>
     </div>
@@ -461,14 +532,20 @@
         // BASE DE DADOS DE PERSONAGENS
         const characterDatabase = {
             // OwnerGift(OG)
-            "Yurinni Riquinni": { rarity: 'OG', income: 100000 },
+            "Yurinni Riquinni": { rarity: 'OG', income: 20000 },
+            "NICOLASZINNI SALVADORINNI": { rarity: 'OG', income: 15000 },
+            "Luís-Miguelzinni Futebolzinni": { rarity: 'OG', income: 17500 },
+            "Updatinni Desculpinni 😭🙏": { rarity: 'OG', income: 5000 },
             
             // SECRETO
-            "Lá grande Combinação": { rarity: 'secreto', income: 500 },
+            "La grande Combinação": { rarity: 'secreto', income: 500 },
+            "La Suprema Combinasion": { rarity: 'comum', income: 800 },
             "Los combinações": { rarity: 'secreto', income: 450 },
             "Piannini Nicolazsini": { rarity: 'secreto', income: 1800 },
             "Luis-Miguelzini Golacozini": { rarity: 'secreto', income: 2000 },
             "Arthurzinni LoboGOATinni": { rarity: 'secreto', income: 3000 },
+            "Joãozinni iPhoninni": { rarity: 'secreto', income: 2000 },
+            "Nathanzinni Neymarzinni": { rarity: 'secreto', income: 2000 },
 
             // BRAINROTGOD
             "Tralalero Tralala": { rarity: 'brainrotgod', income: 250 },
@@ -503,7 +580,38 @@
             // COMUM
             "Fruli Frula": { rarity: 'comum', income: 1 },
             "Noobini Pizzanini": { rarity: 'comum', income: 1 },
+            "Tim Cheese": { rarity: 'comum', income: 1 },
             "Talpa Di Ferro": { rarity: 'comum', income: 1 }
+        };
+
+        // 🎪 BASE DE DADOS DE EVENTOS (APENAS ADMIN)
+        const eventDatabase = {
+            "🌮 Tacos": {
+                duration: 300, // 5 minutos
+                description: "Renda multiplicada por 3x!",
+                incomeMultiplier: 3.0
+            },
+            "🙏😭 DESCULPA": {
+                duration: 240, // 4 minutos
+                description: "Renda multiplicada por 6x!",
+                incomeMultiplier: 6.0
+            },
+            "🍕 Pizza": {
+                duration: 180, // 3 minutos
+                description: "Renda multiplicada por 5x!",
+                incomeMultiplier: 5.0
+            }
+        };
+
+        // RECEITAS DE FUSÃO COMPLETAS
+        const fusionRecipes = {
+            "Los Bros": {
+                ingredients: ["Joãozinni iPhoninni", "Nathanzinni Neymarzinni"],
+                cost: 9000,
+                successRate: 1,
+                rarity: "secreto"
+                // MAIS FUSÕES SERÃO ADICIONADAS!!
+            }
         };
 
         // Game State
@@ -517,7 +625,12 @@
             currentRoom: null,
             socket: null,
             isAdmin: false,
-            adminPassword: 'admin123'
+            adminPassword: 'admin1234',
+            isConnected: false,
+            // 🎪 SISTEMA DE EVENTOS
+            currentEvent: null,
+            eventTimeLeft: 0,
+            eventActive: false
         };
 
         let incomeInterval;
@@ -799,6 +912,133 @@
             showNotification('💾 Backup manual criado com sucesso!');
         }
 
+        // ===== SISTEMA DE FUSÃO =====
+        
+        function openFusionLab() {
+            document.getElementById('fusionModal').style.display = 'flex';
+            updateFusionRecipes();
+        }
+
+        function closeFusionLab() {
+            document.getElementById('fusionModal').style.display = 'none';
+        }
+
+        function updateFusionRecipes() {
+            const container = document.getElementById('fusionRecipesList');
+            container.innerHTML = '';
+
+            Object.entries(fusionRecipes).forEach(([resultName, recipe]) => {
+                const recipeDiv = document.createElement('div');
+                
+                // Verificar se tem todos os ingredientes
+                const hasAllIngredients = recipe.ingredients.every(ingredient => 
+                    gameState.inventory[ingredient] && gameState.inventory[ingredient] > 0
+                );
+                
+                const hasEnoughMoney = gameState.money >= recipe.cost;
+                const canFuse = hasAllIngredients && hasEnoughMoney;
+                
+                recipeDiv.className = `fusion-recipe ${canFuse ? 'available' : 'unavailable'}`;
+                
+                const ingredientsList = recipe.ingredients.map(ingredient => {
+                    const hasIngredient = gameState.inventory[ingredient] && gameState.inventory[ingredient] > 0;
+                    const count = gameState.inventory[ingredient] || 0;
+                    return `<span style="color: ${hasIngredient ? '#4caf50' : '#f44336'};">${ingredient} (${count})</span>`;
+                }).join(' + ');
+                
+                recipeDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 class="rarity-${recipe.rarity}" style="margin: 0;">${resultName}</h3>
+                        <span style="font-size: 14px; color: rgba(255,255,255,0.8);">${(recipe.successRate * 100).toFixed(0)}% chance</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <strong>Ingredientes:</strong><br>
+                        ${ingredientsList}
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Custo:</strong> 💰 ${recipe.cost.toLocaleString()}<br>
+                        <strong>Resultado:</strong> +${characterDatabase[resultName].income}/s
+                    </div>
+                    ${canFuse ? 
+                        `<button class="btn" onclick="attemptFusion('${resultName}')" style="background: #4caf50;">🧪 TENTAR FUSÃO</button>` :
+                        `<button class="btn" disabled style="background: #666; cursor: not-allowed;">❌ Ingredientes/Dinheiro Insuficiente</button>`
+                    }
+                `;
+                
+                container.appendChild(recipeDiv);
+            });
+        }
+
+        function attemptFusion(resultName) {
+            const recipe = fusionRecipes[resultName];
+            if (!recipe) return;
+            
+            // Verificar ingredientes novamente
+            const hasAllIngredients = recipe.ingredients.every(ingredient => 
+                gameState.inventory[ingredient] && gameState.inventory[ingredient] > 0
+            );
+            
+            if (!hasAllIngredients) {
+                showNotification('❌ Ingredientes insuficientes!');
+                return;
+            }
+            
+            if (gameState.money < recipe.cost) {
+                showNotification('❌ Dinheiro insuficiente!');
+                return;
+            }
+            
+            if (!confirm(`🧪 Confirmar fusão de ${resultName}?\n\nCusto: 💰 ${recipe.cost.toLocaleString()}\nChance: ${(recipe.successRate * 100).toFixed(0)}%\n\nIngredientes serão consumidos!`)) {
+                return;
+            }
+            
+            // Consumir ingredientes
+            recipe.ingredients.forEach(ingredient => {
+                gameState.inventory[ingredient]--;
+                if (gameState.inventory[ingredient] <= 0) {
+                    delete gameState.inventory[ingredient];
+                }
+                gameState.income -= characterDatabase[ingredient].income;
+            });
+            
+            // Consumir dinheiro
+            gameState.money -= recipe.cost;
+            
+            // Tentar fusão
+            const success = Math.random() < recipe.successRate || gameState.isAdmin;
+            
+            if (success) {
+                // SUCESSO!
+                if (gameState.inventory[resultName]) {
+                    gameState.inventory[resultName]++;
+                } else {
+                    gameState.inventory[resultName] = 1;
+                }
+                gameState.income += characterDatabase[resultName].income;
+                
+                showNotification(`🎉 FUSÃO SUCESSO! Você criou ${resultName}! +${characterDatabase[resultName].income}/s`);
+                
+                // Notificar outros jogadores se for algo épico
+                if (recipe.rarity === 'OG' || recipe.rarity === 'secreto') {
+                    if (gameState.socket && gameState.socket.readyState === WebSocket.OPEN) {
+                        gameState.socket.send(JSON.stringify({
+                            type: 'chat_message',
+                            username: '🧪 LABORATÓRIO',
+                            message: `${gameState.username} criou ${resultName} por fusão! (${recipe.rarity.toUpperCase()})`,
+                            room: gameState.currentRoom
+                        }));
+                    }
+                }
+            } else {
+                // FALHOU!
+                showNotification(`💥 Fusão falhou! Ingredientes perdidos... Tente novamente!`);
+            }
+            
+            saveUserData();
+            updateUI();
+            updateFusionRecipes();
+        }
+
         // ===== SISTEMA DE JOGO =====
         
         function switchAuthTab(tab) {
@@ -840,6 +1080,15 @@
             
             startGameLoop();
             showNotification('🎮 Entrando na sala: ' + roomCode);
+            
+            // Enviar dados de entrada na sala se conectado
+            if (gameState.socket && gameState.socket.readyState === WebSocket.OPEN) {
+                gameState.socket.send(JSON.stringify({
+                    type: 'player_join',
+                    username: gameState.username,
+                    room: gameState.currentRoom
+                }));
+            }
         }
 
         function startGameLoop() {
@@ -848,8 +1097,21 @@
             
             // Loop principal do jogo
             incomeInterval = setInterval(() => {
-                gameState.money += gameState.income;
+                let currentIncome = gameState.income;
+                
+                // 🎪 APLICAR MULTIPLICADOR DE RENDA DO EVENTO
+                if (gameState.eventActive && gameState.currentEvent) {
+                    const eventData = eventDatabase[gameState.currentEvent];
+                    currentIncome = Math.floor(currentIncome * eventData.incomeMultiplier);
+                }
+                
+                gameState.money += currentIncome;
                 updateUI();
+                
+                // Atualizar timer do evento
+                if (gameState.eventActive) {
+                    updateEventTimer();
+                }
                 
                 // SALVAMENTO AUTOMÁTICO A CADA 3 SEGUNDOS
                 if (Date.now() % 3000 < 1000) {
@@ -857,7 +1119,7 @@
                 }
             }, 1000);
 
-            showNotification('🎮 Jogo iniciado! Sistema de contas ultra seguro ativo!');
+            showNotification('🎮 Jogo iniciado! Sistema multiplayer + fusões + eventos ativo!');
         }
 
         function initSocket() {
@@ -868,33 +1130,53 @@
                 
                 gameState.socket.onopen = function() {
                     document.getElementById('connectionStatus').innerHTML = '🟢 Conectado';
-                    showNotification('🌐 Conectado ao servidor!');
+                    gameState.isConnected = true;
+                    showNotification('🌐 Conectado ao servidor multiplayer!');
+                    
+                    // ENVIAR DADOS DE ENTRADA IMEDIATAMENTE
+                    if (gameState.username && gameState.currentRoom) {
+                        gameState.socket.send(JSON.stringify({
+                            type: 'player_join',
+                            username: gameState.username,
+                            room: gameState.currentRoom
+                        }));
+                    }
                     
                     // Inicializar chat
-                    document.getElementById('chatMessages').innerHTML = '<p style="color: rgba(255,255,255,0.7); text-align: center;">💬 Chat conectado! Digite algo...</p>';
+                    document.getElementById('chatMessages').innerHTML = '<p style="color: rgba(255,255,255,0.7); text-align: center;">💬 Chat multiplayer conectado!</p>';
                 };
                 
                 gameState.socket.onmessage = function(event) {
                     try {
                         const data = JSON.parse(event.data);
+                        console.log('📨 Mensagem recebida:', data);
                         
                         if (data.type === 'chat_message' && data.username !== gameState.username) {
                             addChatMessage(data.username, data.message, false);
-                        } else if (data.type === 'new_conveyor_generated') {
-                            gameState.conveyorItems = data.conveyorItems;
-                            updateConveyor();
-                            showNotification(`🎰 ${data.generatedBy} atualizou a esteira!`);
-                        } else if (data.type === 'admin_event_start') {
-                            showNotification(`🎉 Admin ${data.admin} iniciou evento: ${data.event.name}!`);
-                        } else if (data.type === 'admin_action') {
-                            showNotification(`🔧 Admin ${data.admin} ${data.action}`);
                         } else if (data.type === 'auction_started' && data.bidder !== gameState.username) {
-                            // Alguém iniciou um leilão!
-                            if (gameState.conveyorItems[data.itemIndex]) {
-                                gameState.conveyorItems[data.itemIndex] = data.item;
-                                updateConveyor();
-                                showNotification(`⚔️ ${data.bidder} iniciou leilão por ${data.item.name}! 10s para competir!`);
-                            }
+                            // LEILÃO INICIADO POR OUTRO JOGADOR!
+                            showNotification(`⚔️ ${data.bidder} iniciou leilão por ${data.item.name}! Preço: 💰${data.item.price.toLocaleString()}`);
+                            
+                            // Adicionar item na MINHA esteira para eu poder dar lance
+                            const newItem = {
+                                id: data.item.id + '_shared',
+                                name: data.item.name,
+                                price: data.item.price,
+                                rarity: data.item.rarity,
+                                auctionActive: true,
+                                auctionTimeLeft: 10,
+                                currentBidder: data.bidder,
+                                originalPrice: data.item.originalPrice || data.item.price,
+                                isSharedAuction: true
+                            };
+                            
+                            // Adicionar no início da esteira
+                            gameState.conveyorItems.unshift(newItem);
+                            updateConveyor();
+                            
+                            // Iniciar countdown local
+                            startAuctionCountdown(0);
+                            
                         } else if (data.type === 'auction_ended') {
                             // Leilão terminou
                             if (data.winner === gameState.username) {
@@ -902,9 +1184,24 @@
                             } else {
                                 showNotification(`😢 ${data.winner} venceu o leilão de ${data.itemName}!`);
                             }
+                            
                             // Remover item da esteira
-                            gameState.conveyorItems.splice(data.itemIndex, 1);
+                            gameState.conveyorItems = gameState.conveyorItems.filter(item => 
+                                !(item.name === data.itemName && item.auctionActive)
+                            );
                             updateConveyor();
+                        } else if (data.type === 'players_online') {
+                            updatePlayersOnline(data.players);
+                        } else if (data.type === 'player_joined' && data.username !== gameState.username) {
+                            showNotification(`👋 ${data.username} entrou na sala!`);
+                        } else if (data.type === 'admin_event_start') {
+                            showNotification(`🎉 Admin ${data.admin} iniciou evento: ${data.event.name}!`);
+                        } else if (data.type === 'event_started' && data.starter !== gameState.username) {
+                            showNotification(`🎪 ${data.starter} iniciou evento: ${data.eventName}!`);
+                            // Sincronizar evento para todos os jogadores
+                            if (!gameState.eventActive) {
+                                startEvent(data.eventName, data.eventData);
+                            }
                         }
                     } catch (error) {
                         console.error('Erro ao processar mensagem:', error);
@@ -913,14 +1210,29 @@
                 
                 gameState.socket.onclose = function() {
                     document.getElementById('connectionStatus').innerHTML = '🔴 Desconectado';
+                    gameState.isConnected = false;
+                    showNotification('❌ Conexão perdida! Tentando reconectar...');
+                    
+                    // Tentar reconectar após 3 segundos
+                    setTimeout(() => {
+                        if (gameState.currentRoom) {
+                            initSocket();
+                        }
+                    }, 3000);
                 };
                 
-                gameState.socket.onerror = function() {
+                gameState.socket.onerror = function(error) {
                     document.getElementById('connectionStatus').innerHTML = '🔴 Erro';
+                    gameState.isConnected = false;
+                    console.error('Erro WebSocket:', error);
+                    showNotification('❌ Erro de conexão! Verifique se o servidor está rodando.');
                 };
                 
             } catch (error) {
                 document.getElementById('connectionStatus').innerHTML = '🔴 Erro';
+                gameState.isConnected = false;
+                console.error('Erro ao inicializar socket:', error);
+                showNotification('❌ Erro ao conectar! Modo offline ativado.');
             }
         }
 
@@ -966,6 +1278,66 @@
             });
         }
 
+
+
+        function startEvent(eventName, eventData) {
+            gameState.currentEvent = eventName;
+            gameState.eventTimeLeft = eventData.duration;
+            gameState.eventActive = true;
+            
+            // Mostrar status do evento
+            document.getElementById('eventStatus').style.display = 'block';
+            document.getElementById('eventName').textContent = eventName;
+            document.getElementById('eventDescription').textContent = eventData.description;
+            
+            // Notificar todos os jogadores
+            showNotification(`🎪 EVENTO INICIADO: ${eventName}! Duração: ${Math.floor(eventData.duration/60)}min`);
+            
+            if (gameState.socket && gameState.socket.readyState === WebSocket.OPEN) {
+                gameState.socket.send(JSON.stringify({
+                    type: 'event_started',
+                    eventName: eventName,
+                    eventData: eventData,
+                    starter: gameState.username,
+                    room: gameState.currentRoom
+                }));
+            }
+            
+            // Iniciar countdown do evento
+            const eventInterval = setInterval(() => {
+                gameState.eventTimeLeft--;
+                updateEventTimer();
+                
+                if (gameState.eventTimeLeft <= 0) {
+                    clearInterval(eventInterval);
+                    endEvent();
+                }
+            }, 1000);
+            
+            // Atualizar esteira com possíveis mutações
+            generateConveyorItems();
+        }
+
+        function endEvent() {
+            gameState.eventActive = false;
+            gameState.currentEvent = null;
+            gameState.eventTimeLeft = 0;
+            
+            document.getElementById('eventStatus').style.display = 'none';
+            showNotification('🎪 Evento terminou! Volte ao normal.');
+            
+            // Atualizar esteira sem mutações
+            generateConveyorItems();
+        }
+
+        function updateEventTimer() {
+            if (!gameState.eventActive) return;
+            
+            const minutes = Math.floor(gameState.eventTimeLeft / 60);
+            const seconds = gameState.eventTimeLeft % 60;
+            document.getElementById('eventTimer').textContent = `⏰ ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
         function generateConveyorItems() {
             const rarityWeights = {
                 'comum': 45,
@@ -999,6 +1371,8 @@
             showNotification('🔄 Sua esteira pessoal foi atualizada!');
         }
 
+
+
         function getRandomCharacterByRarity(rarityWeights) {
             const charactersByRarity = {};
             Object.entries(characterDatabase).forEach(([name, data]) => {
@@ -1019,8 +1393,7 @@
                 }
             }
             
-            const commonChars = charactersByRarity['comum'] || Object.keys(characterDatabase);
-            return commonChars[Math.floor(Math.random() * commonChars.length)];
+            return "Fruli Frula";
         }
 
         function calculatePrice(characterName) {
@@ -1033,8 +1406,8 @@
                 'epico': 8,
                 'lendario': 16,
                 'mitico': 32,
-                'secreto': 64,
-                'brainrotgod': 100,
+                'secreto': 100,
+                'brainrotgod': 64,
                 'OG': 1000
             };
             return Math.floor(basePrice * (rarityMultiplier[character.rarity] || 1));
@@ -1061,6 +1434,7 @@
                         <div>⏰ ${item.auctionTimeLeft}s restantes</div>
                         <div style="font-size: 10px;">👑 ${item.currentBidder}</div>
                         <div>💸 +${characterDatabase[item.name].income}/s</div>
+                        ${item.isSharedAuction ? '<div style="font-size: 8px; color: #4ecdc4;">🌐 MULTIPLAYER</div>' : ''}
                     `;
                 } else {
                     card.innerHTML = `
@@ -1096,9 +1470,9 @@
                 // Aumentar preço para próximo lance (20% mais caro)
                 item.price = Math.floor(item.price * 1.2);
                 
-                showNotification(`⚔️ ${gameState.username} comprou ${item.name}! LEILÃO ATIVO - 10s para outros comprarem!`);
+                showNotification(`⚔️ Você iniciou leilão por ${item.name}! Outros jogadores têm 10s para competir!`);
                 
-                // Enviar para outros jogadores
+                // ENVIAR PARA TODOS OS JOGADORES DA SALA
                 if (gameState.socket && gameState.socket.readyState === WebSocket.OPEN) {
                     gameState.socket.send(JSON.stringify({
                         type: 'auction_started',
@@ -1107,6 +1481,7 @@
                         bidder: gameState.username,
                         room: gameState.currentRoom
                     }));
+                    console.log('📡 Leilão enviado para outros jogadores!');
                 }
                 
                 // Iniciar countdown do leilão
@@ -1158,10 +1533,7 @@
                 showNotification(`😢 Você perdeu ${item.name} para ${item.currentBidder}!`);
             }
             
-            // Remover item da esteira
-            gameState.conveyorItems.splice(index, 1);
-            
-            // Enviar resultado para outros jogadores
+            // ENVIAR RESULTADO PARA OUTROS JOGADORES
             if (gameState.socket && gameState.socket.readyState === WebSocket.OPEN) {
                 gameState.socket.send(JSON.stringify({
                     type: 'auction_ended',
@@ -1171,6 +1543,9 @@
                     room: gameState.currentRoom
                 }));
             }
+            
+            // Remover item da esteira
+            gameState.conveyorItems.splice(index, 1);
             
             updateConveyor();
             updateUI();
@@ -1208,15 +1583,14 @@
             
             gameState.money -= 100;
             
+            // Crates também só podem dar personagens que NÃO são de fusão
             const rarityWeights = {
                 'comum': 30,
                 'incomum': 25,
                 'raro': 20,
                 'epico': 15,
-                'lendario': 7,
-                'mitico': 2.5,
-                'secreto': 0.4,
-                'brainrotgod': 0.1
+                'lendario': 10
+                // Removido mítico, secreto, brainrotgod e OG - apenas por fusão!
             };
             
             const randomChar = getRandomCharacterByRarity(rarityWeights);
@@ -1230,7 +1604,7 @@
             gameState.income += characterDatabase[randomChar].income;
             
             saveUserData();
-            showNotification(`📦 Crate aberto! Você obteve ${randomChar}!`);
+            showNotification(`📦 Crate aberto! Você obteve ${randomChar}! (Personagens raros só por fusão 🧪)`);
             updateUI();
         }
 
@@ -1286,7 +1660,7 @@
                 showNotification('🔧 Modo Admin Ativado!');
                 
                 // Painel admin COMPLETO com comandos do servidor
-                const adminAction = prompt('🔧 COMANDOS ADMIN:\n1. 💰 Dar dinheiro\n2. 💎 Dar gemas\n3. 👑 ESCOLHER PERSONAGEM + QUANTIDADE\n4. 🎰 Atualizar minha esteira\n5. 👑 ESCOLHER BRAINROT + QUANTIDADE\n6. 🎉 Iniciar evento pessoal\n\nDigite o número:');
+                const adminAction = prompt('🔧 COMANDOS ADMIN:\n1. 💰 Dar dinheiro\n2. 💎 Dar gemas\n3. 👑 ESCOLHER PERSONAGEM + QUANTIDADE\n4. 🎰 Atualizar minha esteira\n5. 👑 ESCOLHER BRAINROT + QUANTIDADE\n6. 🎉 Iniciar evento pessoal\n7. 🧪 FUSÃO GARANTIDA (100%)\n\nDigite o número:');
                 
                 if (adminAction === '1') {
                     const amount = parseInt(prompt('Quanto dinheiro adicionar?'));
@@ -1363,29 +1737,34 @@
                         showNotification(`👑 ${quantity}x ${selectedBrainrot} spawnado na SUA esteira!`);
                     }
                 } else if (adminAction === '6') {
-                    // Iniciar evento global
-                    const events = [
-                        { name: '💰 CHUVA DE DINHEIRO', moneyMultiplier: 3, priceMultiplier: 0.5, mutationChance: 0.1 },
-                        { name: '🎰 SORTE MÁXIMA', moneyMultiplier: 2, priceMultiplier: 0.3, mutationChance: 0.3 },
-                        { name: '👑 BRAINROT FEST', moneyMultiplier: 5, priceMultiplier: 2, mutationChance: 0.5 },
-                        { name: '⚡ VELOCIDADE 2X', moneyMultiplier: 2, priceMultiplier: 1, mutationChance: 0.2 }
-                    ];
+                    // Escolher evento específico (APENAS ADMIN)
+                    const eventNames = Object.keys(eventDatabase);
+                    const eventList = eventNames.map((name, index) => 
+                        `${index + 1}. ${name} (${Math.floor(eventDatabase[name].duration/60)}min) - ${eventDatabase[name].incomeMultiplier}x renda`
+                    ).join('\n');
                     
-                    const randomEvent = events[Math.floor(Math.random() * events.length)];
-                    const duration = parseInt(prompt('Duração do evento (minutos):')) || 2;
+                    const eventIndex = parseInt(prompt(`🎪 ESCOLHA O EVENTO (APENAS ADMIN):\n\n${eventList}\n\nDigite o número:`)) - 1;
                     
-                    if (gameState.socket && gameState.socket.readyState === WebSocket.OPEN) {
-                        gameState.socket.send(JSON.stringify({
-                            type: 'admin_start_event',
-                            admin: gameState.username,
-                            event: randomEvent,
-                            duration: duration,
-                            room: gameState.currentRoom
-                        }));
-                        showNotification(`🎉 Evento ${randomEvent.name} iniciado por ${duration} minutos!`);
-                    } else {
-                        showNotification('🎉 Evento iniciado (modo offline)!');
+                    if (eventIndex >= 0 && eventIndex < eventNames.length) {
+                        const selectedEventName = eventNames[eventIndex];
+                        const selectedEventData = eventDatabase[selectedEventName];
+                        
+                        startEvent(selectedEventName, selectedEventData);
+                        showNotification(`🎪 Admin iniciou: ${selectedEventName}! Renda ${selectedEventData.incomeMultiplier}x!`);
+                        
+                        // Notificar outros jogadores
+                        if (gameState.socket && gameState.socket.readyState === WebSocket.OPEN) {
+                            gameState.socket.send(JSON.stringify({
+                                type: 'admin_event_start',
+                                admin: gameState.username,
+                                event: { name: selectedEventName, ...selectedEventData },
+                                room: gameState.currentRoom
+                            }));
+                        }
                     }
+                } else if (adminAction === '7') {
+                    showNotification('🧪 Modo Admin: Todas as fusões agora têm 100% de chance!');
+                    openFusionLab();
                 }
             } else if (password) {
                 showNotification('❌ Senha incorreta!');
@@ -1418,7 +1797,7 @@
             const container = document.getElementById('chatMessages');
             
             // Limpar mensagem de carregamento
-            if (container.innerHTML.includes('Chat carregando')) {
+            if (container.innerHTML.includes('Chat carregando') || container.innerHTML.includes('Chat multiplayer')) {
                 container.innerHTML = '';
             }
             
@@ -1451,6 +1830,39 @@
             }
         }
 
+        function updatePlayersOnline(players) {
+            const container = document.getElementById('playersOnline');
+            const countElement = document.getElementById('onlineCount');
+            
+            countElement.textContent = players.length;
+            container.innerHTML = '';
+            
+            if (players.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.7);">Nenhum jogador online</p>';
+                return;
+            }
+            
+            players.forEach(player => {
+                const playerDiv = document.createElement('div');
+                playerDiv.style.cssText = `
+                    background: rgba(255, 255, 255, 0.1);
+                    margin: 3px 0;
+                    padding: 8px;
+                    border-radius: 8px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                `;
+                
+                playerDiv.innerHTML = `
+                    <span>${player.username}</span>
+                    <span style="font-size: 12px;">${player.isAdmin ? '👑' : '🎮'}</span>
+                `;
+                
+                container.appendChild(playerDiv);
+            });
+        }
+
         function showNotification(message) {
             const notification = document.createElement('div');
             notification.className = 'notification';
@@ -1467,6 +1879,6 @@
             }, 3000);
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980069e780191ab8',t:'MTc1ODAyNjIzMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98094abb970d4bbe',t:'MTc1ODExOTMyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 
