@@ -1,6 +1,7 @@
 // Criar servidor HTTP
 const http = require('http')
 const server = http.createServer();
+const WebSocket = require('ws');
 const wss = new WebSocket.Server({ server });
 
 // Armazenar dados dos jogadores e salas
@@ -239,5 +240,6 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Promise rejeitada:', reason);
 });
+
 
 
