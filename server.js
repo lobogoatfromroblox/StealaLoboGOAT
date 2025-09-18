@@ -224,7 +224,7 @@ function updatePlayersInRoom(roomName) {
 }
 
 // Iniciar servidor na porta 8080
-const PORT = proccess.env.PORT || 8080;
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`🎮 Servidor Character Tycoon rodando na porta ${PORT}`);
     console.log(`🌐 WebSocket disponível em ws://localhost:${PORT}`);
@@ -239,4 +239,5 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Promise rejeitada:', reason);
 });
+
 
