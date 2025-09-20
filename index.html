@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Character Tycoon - MULTIPLAYER + FUSÕES!</title>
+    <title>Roube um LoboGOAT!</title>
     <style>
         * {
             margin: 0;
@@ -372,8 +372,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="title">🎮 CHARACTER TYCOON 🎮</h1>
-            <p>MULTIPLAYER + SISTEMA DE FUSÕES COMPLETO!</p>
+            <h1 class="title">🎮 Roube um LoboGOAT 🎮</h1>
+            <p>UPDATE 2!</p>
         </div>
 
         <!-- Login Container -->
@@ -529,108 +529,92 @@
     </div>
 
     <script>
-        // BASE DE DADOS DE PERSONAGENS (APENAS PERSONAGENS NATURAIS)
-        const characterDatabase = { 
-            // OwnerGift(OG) 
-            "Yurinni Riquinni": { rarity: 'OG', income: 20000 }, 
-            "NICOLASZINNI SALVADORINNI": { rarity: 'OG', income: 15000 }, 
-            "Luís-Miguelzinni Futebolzinni": { rarity: 'OG', income: 17500 }, 
-            "Updatinni Desculpinni 😭🙏": { rarity: 'OG', income: 5000 }, 
-            "Arthurzinni LoboGOATinni": { rarity: 'OG', income: 50000 }, 
-            
-            // SECRETO 
-            
-            "La grande Combinação": { rarity: 'secreto', income: 500 }, 
-            "La Suprema Combinasion": { rarity: 'secreto', income: 800 }, 
-            "Los combinações": { rarity: 'secreto', income: 450 }, 
-            "Piannini Nicolazsini": { rarity: 'secreto', income: 1800 }, 
-            "Luis-Miguelzini Golacozini": { rarity: 'secreto', income: 2000 }, 
-            "Joãozinni iPhoninni": { rarity: 'secreto', income: 2000 }, 
-            "Nathanzinni Neymarzinni": { rarity: 'secreto', income: 2000 }, 
-            "Kelvinni Round-6-inni Niggerzinni": { rarity: 'secreto', income: 1500 }, 
-            "Caduzinni Goleirinni": { rarity: 'secreto', income: 1700 }, 
-            "Eduzinni Zagueirinni": { rarity: 'secreto', income: 1850 }, 
-            "Cristopher Mateoooos": { rarity: 'secreto', income: 2500 }, 
-            "Lohanzinni Chicleterinni": { rarity: 'secreto', income: 2550 }, 
+        // BASE DE DADOS DE PERSONAGENS
+        const characterDatabase = {
+            // OwnerGift(OG)
+            "Yurinni Riquinni": { rarity: 'OG', income: 20000 },
+            "NICOLASZINNI SALVADORINNI": { rarity: 'OG', income: 15000 },
+            "Luís-Miguelzinni Futebolzinni": { rarity: 'OG', income: 17500 },
+            "Updatinni Desculpinni 😭🙏": { rarity: 'OG', income: 5000 },
+            "Arthurzinni LoboGOATinni": { rarity: 'OG', income: 3000 },
             
             
-            
-            // BRAINROTGOD 
-            "Tralalero Tralala": { rarity: 'brainrotgod', income: 250 }, 
-            "Matteo": { rarity: 'brainrotgod', income: 290 }, 
-            "Espressona Señora": { rarity: 'brainrotgod', income: 300 }, 
-            
-            // MITICO 
-            "Centralucci Nuclearucci": { rarity: 'mitico', income: 180 }, 
-            
-            "Shpioniro Golubiro": { rarity: 'mitico', income: 140 }, 
-            "Chef Crabracadabra": { rarity: 'mitico', income: 160 }, 
-            
-            // LENDARIO 
-            "Bombardiro Cocodrilo": { rarity: 'lendario', income: 80 }, 
-            "Capuccino Asesino": { rarity: 'lendario', income: 75 }, 
-            "Glorbo Fruttodrillo": { rarity: 'lendario', income: 70 }, 
-            
-            // EPICO 
-            "Tung Tung Tung Sahur": { rarity: 'epico', income: 35 }, 
-            "La Vaca Saturno Saturnita": { rarity: 'epico', income: 28 }, 
-            "Bombardiere Lucertola": { rarity: 'epico', income: 25 }, 
-            
-            // RARO 
-            "Chimpanzini Bananini": { rarity: 'raro', income: 18 }, 
-            "Bombombini Gusini": { rarity: 'raro', income: 16 }, 
-            "Boneca Ambalabu": { rarity: 'raro', income: 15 }, 
-            
-            // INCOMUM 
-            "Tripi Tropi": { rarity: 'incomum', income: 8 }, 
-            "Brr Brr Patapim": { rarity: 'incomum', income: 7 }, 
-            "Frigo Camelo": { rarity: 'incomum', income: 6 }, 
-            
-            // COMUM 
-            "Fruli Frula": { rarity: 'comum', income: 1 }, 
-            "Noobini Pizzanini": { rarity: 'comum', income: 1 }, 
-            "Tim Cheese": { rarity: 'comum', income: 1 }, 
-            "Gustavinni Niggerzinni": { rarity: 'comum', income: 0.5 }, 
-            "Talpa Di Ferro": { rarity: 'comum', income: 1 } 
-        }; // 🎪 BASE DE DADOS DE EVENTOS (APENAS ADMIN) 
-        const eventDatabase = { 
-            "🌮 Tacos": { 
-                duration: 300, 
-                        // 5 minutos
-                description: "Renda multiplicada por 3x!", 
-                incomeMultiplier: 3.0 }, 
-            "🙏😭 DESCULPA": { duration: 240, 
-                            // 4 minutos 
-                            description: "Renda multiplicada por 6x!", 
-                            incomeMultiplier: 6.0 }, 
-            "🍕 Pizza": { duration: 180, 
-                        // 3 minutos
-                        description: "Renda multiplicada por 5x!", 
-                        incomeMultiplier: 5.0 } }; 
-        
+            // SECRETO
+            "La grande Combinação": { rarity: 'secreto', income: 500 },
+            "La Suprema Combinasion": { rarity: 'secreto', income: 800 },
+            "Los combinações": { rarity: 'secreto', income: 450 },
+            "Piannini Nicolazsini": { rarity: 'secreto', income: 1800 },
+            "Luis-Miguelzini Golacozini": { rarity: 'secreto', income: 2000 },
+            "Joãozinni iPhoninni": { rarity: 'secreto', income: 2000 },
+            "Nathanzinni Neymarzinni": { rarity: 'secreto', income: 2000 },
 
-        // 🧪 PERSONAGENS DE FUSÃO (CRIADOS DINAMICAMENTE)
-        const fusionCharacters = {
-        "Los Bros": { rarity: 'secreto', income: 4000 },
-        "Los Supreme Bros": { rarity: 'OG', income: 500000 },
+            // BRAINROTGOD
+            "Tralalero Tralala": { rarity: 'brainrotgod', income: 250 },
+            "Matteo": { rarity: 'brainrotgod', income: 290 },
+            "Espressona Señora": { rarity: 'brainrotgod', income: 300 },
+
+            // MITICO
+            "Centralucci Nuclearucci": { rarity: 'mitico', income: 180 },
+            "Shpioniro Golubiro": { rarity: 'mitico', income: 140 },
+            "Chef Crabracadabra": { rarity: 'mitico', income: 160 },
+
+            // LENDARIO
+            "Bombardiro Cocodrilo": { rarity: 'lendario', income: 80 },
+            "Capuccino Asesino": { rarity: 'lendario', income: 75 },
+            "Glorbo Fruttodrillo": { rarity: 'lendario', income: 70 },
+
+            // EPICO
+            "Tung Tung Tung Sahur": { rarity: 'epico', income: 35 },
+            "La Vaca Saturno Saturnita": { rarity: 'epico', income: 28 },
+            "Bombardiere Lucertola": { rarity: 'epico', income: 25 },
+
+            // RARO
+            "Chimpanzini Bananini": { rarity: 'raro', income: 18 },
+            "Bombombini Gusini": { rarity: 'raro', income: 16 },
+            "Boneca Ambalabu": { rarity: 'raro', income: 15 },
+
+            // INCOMUM
+            "Tripi Tropi": { rarity: 'incomum', income: 8 },
+            "Brr Brr Patapim": { rarity: 'incomum', income: 7 },
+            "Frigo Camelo": { rarity: 'incomum', income: 6 },
+
+            // COMUM
+            "Fruli Frula": { rarity: 'comum', income: 1 },
+            "Noobini Pizzanini": { rarity: 'comum', income: 1 },
+            "Tim Cheese": { rarity: 'comum', income: 1 },
+            "Gustavinni Niggerzinni": { rarity: 'comum', income: 0.5 },
+            "Talpa Di Ferro": { rarity: 'comum', income: 1 }
         };
 
+        // 🎪 BASE DE DADOS DE EVENTOS (APENAS ADMIN)
+        const eventDatabase = {
+            "🌮 Tacos": {
+                duration: 300, // 5 minutos
+                description: "Renda multiplicada por 3x!",
+                incomeMultiplier: 3.0
+            },
+            "🙏😭 DESCULPA": {
+                duration: 240, // 4 minutos
+                description: "Renda multiplicada por 6x!",
+                incomeMultiplier: 6.0
+            },
+            "🍕 Pizza": {
+                duration: 180, // 3 minutos
+                description: "Renda multiplicada por 5x!",
+                incomeMultiplier: 5.0
+            }
+        };
 
-
-        // 🧪 RECEITAS DE FUSÃO COMPLETAS
+        // RECEITAS DE FUSÃO COMPLETAS
         const fusionRecipes = {
-           "Los Bros": {
+            "Los Bros": {
                 ingredients: ["Joãozinni iPhoninni", "Nathanzinni Neymarzinni"],
                 cost: 9000,
                 successRate: 1,
                 rarity: "secreto"
-            },
-              "Los Supreme Bros": {
-                ingredients: ["Joãozinni iPhoninni", "Nathanzinni Neymarzinni","Arthurzinni LoboGOATinni", "Kelvinni Round-6-inni Niggerzinni", "Piannini Nicolazsini", "Yurinni Riquinni", "Gustavinni Niggerzinni", "Caduzinni Goleirinni", "Eduzinni Zagueirinni", "Cristopher Mateoooos", "Lohanzinni Chicleterinni"  ],
-                cost: 200000,
-                successRate: 1,
-                rarity: "OG"
-            },
+                // MAIS FUSÕES SERÃO ADICIONADAS!!
+            }
+        };
 
         // Game State
         let gameState = {
@@ -643,7 +627,7 @@
             currentRoom: null,
             socket: null,
             isAdmin: false,
-            adminPassword: 'admin123',
+            adminPassword: 'admin1234',
             isConnected: false,
             // 🎪 SISTEMA DE EVENTOS
             currentEvent: null,
@@ -975,7 +959,7 @@
                     </div>
                     <div style="margin-bottom: 15px;">
                         <strong>Custo:</strong> 💰 ${recipe.cost.toLocaleString()}<br>
-                        <strong>Resultado:</strong> +${getCharacterData(resultName).income}/s
+                        <strong>Resultado:</strong> +${characterDatabase[resultName].income}/s
                     </div>
                     ${canFuse ? 
                         `<button class="btn" onclick="attemptFusion('${resultName}')" style="background: #4caf50;">🧪 TENTAR FUSÃO</button>` :
@@ -1016,10 +1000,7 @@
                 if (gameState.inventory[ingredient] <= 0) {
                     delete gameState.inventory[ingredient];
                 }
-                const ingredientData = getCharacterData(ingredient);
-                if (ingredientData) {
-                    gameState.income -= ingredientData.income;
-                }
+                gameState.income -= characterDatabase[ingredient].income;
             });
             
             // Consumir dinheiro
@@ -1035,12 +1016,9 @@
                 } else {
                     gameState.inventory[resultName] = 1;
                 }
-                const resultData = getCharacterData(resultName);
-                if (resultData) {
-                    gameState.income += resultData.income;
-                }
+                gameState.income += characterDatabase[resultName].income;
                 
-                showNotification(`🎉 FUSÃO SUCESSO! Você criou ${resultName}! +${resultData ? resultData.income : 0}/s`);
+                showNotification(`🎉 FUSÃO SUCESSO! Você criou ${resultName}! +${characterDatabase[resultName].income}/s`);
                 
                 // Notificar outros jogadores se for algo épico
                 if (recipe.rarity === 'OG' || recipe.rarity === 'secreto') {
@@ -1150,7 +1128,7 @@
             try {
                 document.getElementById('connectionStatus').innerHTML = '🟡 Conectando...';
                 
-                gameState.socket = new WebSocket('wss://stealalobogoat-production.up.railway.app/');
+                gameState.socket = new WebSocket('wss://stealalobogoat-production.up.railway.app');
                 
                 gameState.socket.onopen = function() {
                     document.getElementById('connectionStatus').innerHTML = '🟢 Conectado';
@@ -1233,59 +1211,31 @@
                 };
                 
                 gameState.socket.onclose = function() {
-                    document.getElementById('connectionStatus').innerHTML = '🔴 Modo Offline';
+                    document.getElementById('connectionStatus').innerHTML = '🔴 Desconectado';
                     gameState.isConnected = false;
-                    showNotification('🔄 Servidor indisponível! Continuando em modo offline...');
+                    showNotification('❌ Conexão perdida! Tentando reconectar...');
                     
-                    // Ativar modo offline permanente
-                    activateOfflineMode();
+                    // Tentar reconectar após 3 segundos
+                    setTimeout(() => {
+                        if (gameState.currentRoom) {
+                            initSocket();
+                        }
+                    }, 3000);
                 };
                 
                 gameState.socket.onerror = function(error) {
-                    document.getElementById('connectionStatus').innerHTML = '🔴 Servidor Offline';
+                    document.getElementById('connectionStatus').innerHTML = '🔴 Erro';
                     gameState.isConnected = false;
                     console.error('Erro WebSocket:', error);
-                    showNotification('⚠️ Servidor multiplayer offline! Jogando em modo local.');
+                    showNotification('❌ Erro de conexão! Verifique se o servidor está rodando.');
                 };
                 
             } catch (error) {
-                document.getElementById('connectionStatus').innerHTML = '🔴 Modo Offline';
+                document.getElementById('connectionStatus').innerHTML = '🔴 Erro';
                 gameState.isConnected = false;
                 console.error('Erro ao inicializar socket:', error);
-                showNotification('🔄 Servidor indisponível! Modo offline ativado.');
-                activateOfflineMode();
+                showNotification('❌ Erro ao conectar! Modo offline ativado.');
             }
-        }
-
-        function activateOfflineMode() {
-            // Configurar modo offline
-            gameState.isConnected = false;
-            document.getElementById('connectionStatus').innerHTML = '🔴 Modo Offline';
-            
-            // Atualizar chat para modo offline
-            document.getElementById('chatMessages').innerHTML = `
-                <div style="text-align: center; color: rgba(255,255,255,0.7); padding: 20px;">
-                    <p>💻 <strong>MODO OFFLINE ATIVO</strong></p>
-                    <p>🎮 Todas as funcionalidades funcionam normalmente!</p>
-                    <p>💾 Seus dados são salvos localmente</p>
-                    <p>🔄 Reconectará automaticamente quando o servidor voltar</p>
-                </div>
-            `;
-            
-            // Desabilitar input de chat
-            document.getElementById('chatInput').disabled = true;
-            document.getElementById('chatInput').placeholder = 'Chat offline - servidor indisponível';
-            
-            // Atualizar lista de jogadores
-            document.getElementById('playersOnline').innerHTML = `
-                <div style="text-align: center; color: rgba(255,255,255,0.7);">
-                    <p>👤 Você (Offline)</p>
-                    <p style="font-size: 12px;">Servidor multiplayer indisponível</p>
-                </div>
-            `;
-            document.getElementById('onlineCount').textContent = '1';
-            
-            showNotification('💻 Modo offline ativo! Todas as funcionalidades disponíveis localmente.');
         }
 
         function updateUI() {
@@ -1313,9 +1263,7 @@
                 const item = document.createElement('div');
                 item.className = 'inventory-item';
                 
-                const character = getCharacterData(name);
-                if (!character) return;
-                
+                const character = characterDatabase[name];
                 const sellPrice = Math.floor(character.income * 5);
                 
                 item.innerHTML = `
@@ -1427,18 +1375,8 @@
 
 
 
-        // 🔍 FUNÇÃO PARA ACESSAR DADOS DE PERSONAGENS (NATURAL + FUSÃO)
-        function getCharacterData(name) {
-            return characterDatabase[name] || fusionCharacters[name] || null;
-        }
-
-        function getAllCharacters() {
-            return { ...characterDatabase, ...fusionCharacters };
-        }
-
         function getRandomCharacterByRarity(rarityWeights) {
             const charactersByRarity = {};
-            // APENAS personagens naturais podem aparecer na esteira
             Object.entries(characterDatabase).forEach(([name, data]) => {
                 if (!charactersByRarity[data.rarity]) {
                     charactersByRarity[data.rarity] = [];
@@ -1461,9 +1399,7 @@
         }
 
         function calculatePrice(characterName) {
-            const character = getCharacterData(characterName);
-            if (!character) return 100;
-            
+            const character = characterDatabase[characterName];
             const basePrice = character.income * 10;
             const rarityMultiplier = {
                 'comum': 1,
@@ -1472,8 +1408,8 @@
                 'epico': 8,
                 'lendario': 16,
                 'mitico': 32,
-                'secreto': 64,
-                'brainrotgod': 100,
+                'secreto': 100,
+                'brainrotgod': 64,
                 'OG': 1000
             };
             return Math.floor(basePrice * (rarityMultiplier[character.rarity] || 1));
@@ -1499,14 +1435,14 @@
                         <div>💰 ${item.price.toLocaleString()}</div>
                         <div>⏰ ${item.auctionTimeLeft}s restantes</div>
                         <div style="font-size: 10px;">👑 ${item.currentBidder}</div>
-                        <div>💸 +${getCharacterData(item.name).income}/s</div>
+                        <div>💸 +${characterDatabase[item.name].income}/s</div>
                         ${item.isSharedAuction ? '<div style="font-size: 8px; color: #4ecdc4;">🌐 MULTIPLAYER</div>' : ''}
                     `;
                 } else {
                     card.innerHTML = `
                         <div><strong>${item.name}</strong></div>
                         <div>💰 ${item.price.toLocaleString()}</div>
-                        <div>💸 +${getCharacterData(item.name).income}/s</div>
+                        <div>💸 +${characterDatabase[item.name].income}/s</div>
                     `;
                 }
                 
@@ -1592,7 +1528,7 @@
                     gameState.inventory[item.name] = 1;
                 }
                 
-                gameState.income += getCharacterData(item.name).income;
+                gameState.income += characterDatabase[item.name].income;
                 saveUserData();
                 showNotification(`🏆 VOCÊ VENCEU! ${item.name} é seu! +${characterDatabase[item.name].income}/s`);
             } else {
@@ -1620,9 +1556,7 @@
         function sellCharacter(name) {
             if (!gameState.inventory[name] || gameState.inventory[name] <= 0) return;
             
-            const character = getCharacterData(name);
-            if (!character) return;
-            
+            const character = characterDatabase[name];
             const sellPrice = Math.floor(character.income * 5);
             
             gameState.money += sellPrice;
@@ -1669,7 +1603,7 @@
                 gameState.inventory[randomChar] = 1;
             }
             
-            gameState.income += getCharacterData(randomChar).income;
+            gameState.income += characterDatabase[randomChar].income;
             
             saveUserData();
             showNotification(`📦 Crate aberto! Você obteve ${randomChar}! (Personagens raros só por fusão 🧪)`);
@@ -1752,14 +1686,13 @@
                         return;
                     }
                     
-                    // Lista de personagens para escolher (TODOS - naturais + fusão)
-                    const allChars = getAllCharacters();
-                    const charList = Object.keys(allChars).map((name, index) => 
-                        `${index + 1}. ${name} (${allChars[name].rarity}) +${allChars[name].income}/s`
+                    // Lista de personagens para escolher
+                    const charList = Object.keys(characterDatabase).map((name, index) => 
+                        `${index + 1}. ${name} (${characterDatabase[name].rarity}) +${characterDatabase[name].income}/s`
                     ).join('\n');
                     
                     const charIndex = parseInt(prompt(`🎮 ESCOLHA O PERSONAGEM:\n\n${charList}\n\nDigite o número:`)) - 1;
-                    const charNames = Object.keys(allChars);
+                    const charNames = Object.keys(characterDatabase);
                     
                     if (charIndex >= 0 && charIndex < charNames.length) {
                         const selectedChar = charNames[charIndex];
@@ -1770,10 +1703,7 @@
                         } else {
                             gameState.inventory[selectedChar] = quantity;
                         }
-                        const charData = getCharacterData(selectedChar);
-                        if (charData) {
-                            gameState.income += charData.income * quantity;
-                        }
+                        gameState.income += characterDatabase[selectedChar].income * quantity;
                         showNotification(`👑 Adicionado ${quantity}x ${selectedChar}!`);
                         updateUI();
                         saveUserData();
@@ -1786,7 +1716,7 @@
                     // Escolher brainrot para spawnar
                     const brainrots = ['Yurinni Riquinni', 'Arthurzinni LoboGOATinni', 'Luis-Miguelzini Golacozini', 'Tralalero Tralala', 'Matteo', 'Espressona Señora'];
                     const brainrotList = brainrots.map((name, index) => 
-                        `${index + 1}. ${name} (+${getCharacterData(name).income}/s)`
+                        `${index + 1}. ${name} (+${characterDatabase[name].income}/s)`
                     ).join('\n');
                     
                     const brainrotIndex = parseInt(prompt(`👑 ESCOLHA O BRAINROT:\n\n${brainrotList}\n\nDigite o número:`)) - 1;
@@ -1802,7 +1732,7 @@
                                 id: `admin_${Date.now()}_${i}`,
                                 name: selectedBrainrot,
                                 price: price,
-                                rarity: getCharacterData(selectedBrainrot).rarity
+                                rarity: characterDatabase[selectedBrainrot].rarity
                             });
                         }
                         updateConveyor();
@@ -1928,7 +1858,7 @@
                 
                 playerDiv.innerHTML = `
                     <span>${player.username}</span>
-                    <span style="font-size: 12px;">${player.isAdmin ? '👑ADMIN' : '🎮ADMIN'}</span>
+                    <span style="font-size: 12px;">${player.isAdmin ? '👑' : '🎮'}</span>
                 `;
                 
                 container.appendChild(playerDiv);
@@ -1951,8 +1881,10 @@
             }, 3000);
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980c0deb125e3f2d',t:'MTc1ODE0ODI5Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98094abb970d4bbe',t:'MTc1ODExOTMyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
+
 
 
 
